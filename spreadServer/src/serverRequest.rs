@@ -1,4 +1,4 @@
-// Result register()
+// Needeed Functions
 // Result getPublishers()
 // Result createSheet(Argument)
 // Result getSheets(Argument)
@@ -8,32 +8,36 @@
 // Result updatePublished(Argument)
 // Result updateSubscription(Argument)
 
-// Result {
-//     boolean  success
-//     String message
-//     List<Argument> value
-//   }
-//   Argument {
-//     String publisher, sheet, id, payload
-//   }
-// https://localhost:9443/api/v1/getPublishers.
-
-use std::sync::Mutex;
-
-use crate::database;
-use crate::results;
-use crate::results::Result;
-use crate::users;
+// Third Party Libraries
 use actix_web::web;
 use actix_web::{get, post, put, HttpResponse, Responder};
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use std::sync::Mutex;
+
+// Our files/structs
+use crate::database;
+use crate::publisher;
+use crate::results;
+use crate::results::Result;
+
+// Type Aliasing
 type Argument = results::Argument;
 type DataStructure = database::DataStructure;
 
 #[put("/api/v1/register")]
-pub async fn register(db: web::Data<Mutex<DataStructure>>) -> actix_web::Result<impl Responder> {
+pub async fn register(
+    db: web::Data<Mutex<DataStructure>>,
+    creds: BasicAuth,
+) -> actix_web::Result<impl Responder> {
     let res: Result = Result::default();
     let res2: Result = Result::default();
-    db.lock().unwrap().add(users::User::default(), res);
+    db.lock().unwrap().add(
+        publisher::Publisher::new(
+            creds.user_id().to_string(),
+            creds.password().unwrap().to_string(),
+        ),
+        res,
+    );
     Ok(web::Json(res2))
 }
 

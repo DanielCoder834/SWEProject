@@ -1,11 +1,16 @@
-use crate::results;
-use crate::users;
+// Third Party Libraries
 use std::collections::HashMap;
+
+// Our Files
+use crate::publisher;
+use crate::results;
+
+// Type Aliasing
 type Result = results::Result;
-type User = users::User;
+type Publisher = publisher::Publisher;
 
 pub struct DataStructure {
-    pub storage: HashMap<User, Result>,
+    pub storage: HashMap<Publisher, Result>,
 }
 
 impl DataStructure {
@@ -15,16 +20,16 @@ impl DataStructure {
         }
     }
 
-    pub fn add(&mut self, key: User, value: Result) -> Option<Result> {
+    pub fn add(&mut self, key: Publisher, value: Result) -> Option<Result> {
         self.storage.insert(key, value)
     }
-    pub fn delete(&mut self, key: User) -> Option<Result> {
+    pub fn delete(&mut self, key: Publisher) -> Option<Result> {
         self.storage.remove(&key)
     }
-    pub fn get(&mut self, key: User) -> Option<&Result> {
+    pub fn get(&mut self, key: Publisher) -> Option<&Result> {
         self.storage.get(&key)
     }
-    pub fn update(&mut self, key: User, new_result: Result) {
+    pub fn update(&mut self, key: Publisher, new_result: Result) {
         if let Some(result) = self.storage.get_mut(&key) {
             *result = new_result;
         }

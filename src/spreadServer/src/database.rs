@@ -1,5 +1,6 @@
 // Third Party Libraries
 use std::collections::HashMap;
+use std::error::Error;
 
 // Our Files
 use crate::publisher;
@@ -9,14 +10,18 @@ use crate::results;
 type Result = results::Result;
 type Publisher = publisher::Publisher;
 
+
 pub struct DataStructure {
     pub storage: HashMap<Publisher, Result>,
+    // User names to password
+    pub credentialStorage: HashMap<String, String>,
 }
 
 impl DataStructure {
     pub fn default() -> Self {
         DataStructure {
             storage: HashMap::new(),
+            credentialStorage: HashMap::new(),
         }
     }
 
@@ -33,5 +38,15 @@ impl DataStructure {
         if let Some(result) = self.storage.get_mut(&key) {
             *result = new_result;
         }
+    }
+
+    pub fn addCredentials(&mut self, username: &str, password: &str) -> std::result::Result<(), Box<dyn Error>> {
+        if self.credentialStorage.contains_key(username) {
+            return Err(Box::from("Username already exists"));
+        } else {
+            self.credentialStorage.insert(username.to_string(), password.to_string());
+        }
+        Ok(())
+
     }
 }

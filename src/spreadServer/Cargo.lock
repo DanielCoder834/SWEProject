@@ -31,7 +31,7 @@ dependencies = [
  "actix-tls",
  "actix-utils",
  "ahash",
- "base64",
+ "base64 0.21.7",
  "bitflags",
  "brotli",
  "bytes",
@@ -210,7 +210,7 @@ checksum = "1d613edf08a42ccc6864c941d30fe14e1b676a77d16f1dbadc1174d065a0a775"
 dependencies = [
  "actix-utils",
  "actix-web",
- "base64",
+ "base64 0.21.7",
  "futures-core",
  "futures-util",
  "log",
@@ -295,6 +295,12 @@ name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d297deb1925b89f2ccc13d7635fa0714f12c87adce1c75356b39ca9b7178567"
+
+[[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bitflags"
@@ -1053,11 +1059,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "spreadServer"
+name = "spread_server"
 version = "0.1.0"
 dependencies = [
  "actix-web",
  "actix-web-httpauth",
+ "base64 0.22.1",
  "openssl",
  "serde",
  "serde_json",

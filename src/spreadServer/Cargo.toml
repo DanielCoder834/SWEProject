@@ -1,8 +1,16 @@
+[lib]
+name = "libs"
+path = "src/lib.rs"
+
+
 [package]
-name = "spreadServer"
+name = "spread_server"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "bins"
+path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -11,3 +19,5 @@ serde_json = "1.0.79"
 serde = { version = "1.0.197", features = ["derive"] }
 actix-web-httpauth = "0.8.1"
 openssl = { version = "0.10" }
+base64 = "0.22.1"
+

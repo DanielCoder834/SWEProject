@@ -7,14 +7,14 @@ use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 use std::sync::Mutex;
 
 // Our File Modules
+pub mod server_request;
 mod database;
 mod publisher;
 mod results;
-mod serverRequest;
 
 // Our File Functions/Structs
 use database::DataStructure;
-use serverRequest::{echo, hello, manual_hello, register};
+use server_request::{echo, hello, manual_hello, register};
 
 async fn do_auth(
     req: ServiceRequest,
@@ -38,11 +38,11 @@ async fn main() -> std::io::Result<()> {
         let new_db = DataStructure::default();
         let db: web::Data<Mutex<DataStructure>> = actix_web::web::Data::new(Mutex::new(new_db));
         App::new()
-            .wrap(HttpAuthentication::basic(do_auth))
-            .service(hello)
-            .service(echo)
             .app_data(db)
             .service(register)
+            // .wrap(HttpAuthentication::basic(do_auth))
+            .service(hello)
+            .service(echo)
             .route("/hey", web::get().to(manual_hello))
     })
     .bind_openssl("localhost:9443", builder)?

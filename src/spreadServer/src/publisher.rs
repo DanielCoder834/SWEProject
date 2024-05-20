@@ -1,4 +1,4 @@
-#[derive(PartialEq, Hash, Eq)]
+#[derive(PartialEq, Hash, Eq, Debug)]
 pub struct Publisher {
     username: String,
     password: String,

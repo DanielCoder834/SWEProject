@@ -1,0 +1,10 @@
+/Users/danielkaplan/Documents/GitHub/SWEProject/spreadServer/target/debug/deps/libactix_codec-14a7a004eb6799fd.rmeta: /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lib.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/bcodec.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/framed.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lines.rs
+
+/Users/danielkaplan/Documents/GitHub/SWEProject/spreadServer/target/debug/deps/libactix_codec-14a7a004eb6799fd.rlib: /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lib.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/bcodec.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/framed.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lines.rs
+
+/Users/danielkaplan/Documents/GitHub/SWEProject/spreadServer/target/debug/deps/actix_codec-14a7a004eb6799fd.d: /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lib.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/bcodec.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/framed.rs /Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lines.rs
+
+/Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lib.rs:
+/Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/bcodec.rs:
+/Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/framed.rs:
+/Users/danielkaplan/.cargo/registry/src/index.crates.io-6f17d22bba15001f/actix-codec-0.5.2/src/lines.rs:

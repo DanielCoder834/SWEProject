@@ -1,1 +1,0 @@
-fn(Data<Mutex<database::DataStructure>>) -> impl std::future::Future<Output = std::result::Result<impl Responder, actix_web::Error>> {serverRequest::register}

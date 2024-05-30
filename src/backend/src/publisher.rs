@@ -3,6 +3,7 @@ pub struct Publisher {
     username: String,
     password: String,
     is_authorized: bool,
+    sheet_list: Vec<Sheet>,
 }
 
 enum AuthUserName {
@@ -32,6 +33,7 @@ impl Publisher {
             username: "".to_string(),
             password: "".to_string(),
             is_authorized: false,
+            sheet_list = vec![],
         }
     }
     pub fn new(username: String, password: String) -> Self {
@@ -39,6 +41,15 @@ impl Publisher {
             username: username.clone(),
             password,
             is_authorized: AuthUserName::is_authorized(&username),
+            sheet_list = vec![],
         }
+    }
+
+    pub fn get_username(&self) -> &String {
+        &self.username
+    }
+
+    pub fn get_sheet_list(&self) -> &Vec<Sheet> {
+        &self.sheet_list
     }
 }

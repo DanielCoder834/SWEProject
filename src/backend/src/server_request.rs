@@ -106,14 +106,146 @@ pub async fn register(
 // #[get("/api/vi/getPublishers")]
 // async fn getPublishers() {}
 
-// #[put("/api/vi/createSheet")]
-// async fn createSheet(req_body: Argument) {}
+/* Written by Brooklyn Schmidt
+- Deserializes Argument Json Object
+- Gets the publisher from the database
+- Creates a new sheet and updates database
+*/
 
-// #[get("/api/vi/getSheets")]
-// async fn getSheets(req_body: Argument) {}
+#[put("/api/vi/createSheet")]
+async fn createSheet(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) {
+    let argument_given: Argument = req_body.into_inner();
 
-// #[delete("/api/vi/deleteSheet")]
-// async fn deleteSheet(req_body: Argument) {}
+    let mut this_publisher = match db.get(&argument_given.publisher) {
+        Some(publisher_ref) => publisher_ref,
+        None => return web::Json(Result::new(
+            false,
+            "Publisher not found".to_string(),
+            vec![]
+        )),
+    };
+
+    let mut publisher_sheet_list = this_publisher.get_sheet_list();
+
+    for sheet in publisher_sheet_list {
+        if (sheet.name() == &argument_given.sheet && sheet.owner() == &argument_given.publisher.username()) {
+            let failed_result = Result::new(
+                false,
+                "A sheet you own already has that name!".to_string(),
+                vec![]
+            );
+            return web::Json(failed_result);
+        }
+    }
+    
+    publisher_sheet_list.push(Sheet::new(
+        &argument_given.publisher, 
+        &argument_given.sheet));
+
+    let successful_result = Result::new(
+        true, 
+        "Created a new sheet!".to_string(),
+         vec![]);
+
+    db.lock().unwrap().update(this_publisher, &successful_result);
+
+    web::Json(successful_result)
+}
+
+/* Written by Brooklyn Schmidt
+- Deserializes Argument Json Object
+- Gets the publisher from the database
+- Gets list of sheets that they have
+*/
+
+#[get("/api/vi/getSheets")]
+async fn getSheets(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) {
+    let argument_given: Argument = req_body.into_inner();
+
+    let this_publisher = match db.get(&argument_given.publisher) {
+        Some(publisher_ref) => publisher_ref,
+        None => return web::Json(Result::new(
+            false,
+            "Publisher not found".to_string(),
+            vec![]
+        )),
+    };
+
+    let sheets = this_publisher.get_sheet_list();
+
+    let mut list_of_arguments : Vec<Argument> = vec![];
+
+    for sheet in sheets {
+        let add_argument : Argument = Argument::new(
+            &argument_given.publisher,
+            &argument_given.sheet,
+            "".to_string(),
+            "".to_string(),
+        )
+        list_of_arguments.push(add_argument);
+    }
+
+    let result = Result::new(
+        true, 
+        "Sheets retrieved successfully", 
+        list_of_arguments);
+
+    return web::Json(result);
+
+}
+
+/* Written by Brooklyn Schmidt
+- Deserializes Json Object
+- Retrieves list of sheets from given Publisher
+- Deletes sheet of name "sheet" from vector
+- Update database
+*/
+
+#[delete("/api/vi/deleteSheet")]
+async fn deleteSheet(req_body: Argument) {
+    let argument_given: Argument = req_body.into_inner();
+
+    let this_publisher = match db.get(&argument_given.publisher) {
+        Some(publisher_ref) => publisher_ref,
+        None => return web::Json(Result::new(
+            false,
+            "Publisher not found".to_string(),
+            vec![]
+        )),
+    };
+
+    let mut publisher_sheet_list = this_publisher.get_sheet_list();
+
+    let mut count = 0;
+    let mut found = false;
+    for sheet in publisher_sheet_list {
+        if sheet.name == &argument_given.sheet {
+            found = true;
+            break;
+        }
+        count += 1;
+    }
+
+    if found {
+        publisher_sheet_list.remove(count);
+    } else {
+        return web::Json(Result::new(
+            false,
+            "Sheet name not found",
+            vec![],
+        ))
+    }
+
+    let successful_result = Result::new(
+        true, 
+        "Deleted sheet".to_string(),
+         vec![]);
+
+    db.lock().unwrap().update(this_publisher, &successful_result);
+
+    web::Json(successful_result);
+
+}
 
 // #[get("/api/vi/getUpdatesForSubscription")]
 // async fn getUpdatesForSubscription(req_body: Argument) {}

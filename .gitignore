@@ -1,0 +1,8 @@
+# Sensitive Data
+**/.env
+# Large Folders/Files
+#**/.keep
+/src/backend/target
+src/backend/target/.rustc_info.json
+/.idea
+src/backend/target/.rustc_info.json

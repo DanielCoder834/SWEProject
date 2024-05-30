@@ -11,6 +11,7 @@ pub mod server_request;
 mod database;
 mod publisher;
 mod results;
+mod schema;
 
 // Our File Functions/Structs
 use database::DataStructure;
@@ -20,6 +21,7 @@ async fn do_auth(
     req: ServiceRequest,
     creds: BasicAuth,
 ) -> Result<ServiceRequest, (ActixError, ServiceRequest)> {
+    // TODO: Once Leo has added queries, we do a search for valid users and passwords
     if creds.user_id() == "user" && creds.password() == Some("pass") {
         Ok(req)
     } else {

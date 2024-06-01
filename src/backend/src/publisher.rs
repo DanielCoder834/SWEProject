@@ -1,47 +1,33 @@
-#[derive(PartialEq, Hash, Eq, Debug, serde::Deserialize)]
+use diesel::{Identifiable, Insertable, Queryable, Selectable};
+use crate::schema::publishers;
+
+#[derive(PartialEq, Hash, Eq, Debug, serde::Deserialize,
+Clone, Queryable, Selectable, Identifiable)]
+#[diesel(table_name = crate::schema::publishers)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(primary_key(id))]
 pub struct Publisher {
-    username: String,
-    password: String,
-    is_authorized: bool,
-    sheet_list: Vec<Sheet>,
-}
-
-enum AuthUserName {
-    Brooklyn,
-    Daniel,
-    Leo,
-}
-
-impl AuthUserName {
-    fn string_values(&self) -> &str {
-        match *self {
-            AuthUserName::Brooklyn => "Brooklyn",
-            AuthUserName::Daniel => "Daniel",
-            AuthUserName::Leo => "Leo",
-        }
-    }
-    fn is_authorized(username: &str) -> bool {
-        return AuthUserName::Brooklyn.string_values() == username
-            || AuthUserName::Daniel.string_values() == username
-            || AuthUserName::Leo.string_values() == username;
-    }
+    pub id: i64,
+    pub username: String,
+    pub password: String,
+    // sheet_list: Vec<Sheet>,
 }
 
 impl Publisher {
     pub fn default() -> Self {
         Publisher {
+            id: 0,
             username: "".to_string(),
             password: "".to_string(),
-            is_authorized: false,
-            sheet_list = vec![],
+            // sheet_list: vec![],
         }
     }
-    pub fn new(username: String, password: String) -> Self {
+    pub fn new(username: String, password: String, id: i64) -> Self {
         Publisher {
+            id,
             username: username.clone(),
             password,
-            is_authorized: AuthUserName::is_authorized(&username),
-            sheet_list = vec![],
+            // sheet_list: vec![],
         }
     }
 
@@ -49,7 +35,17 @@ impl Publisher {
         &self.username
     }
 
-    pub fn get_sheet_list(&self) -> &Vec<Sheet> {
-        &self.sheet_list
-    }
+    // pub fn get_sheet_list(&self) -> &Vec<Sheet> {
+    //     // &self.sheet_list
+    // }
 }
+
+#[derive(Insertable)]
+#[diesel(table_name = publishers)]
+pub struct NewPublisherCredentials<'a> {
+    pub id: &'a i64,
+    pub username: &'a str,
+    pub password: &'a str,
+}
+
+

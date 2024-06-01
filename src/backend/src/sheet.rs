@@ -1,33 +1,131 @@
+use diesel::{Identifiable, Insertable, Queryable, Selectable};
+
+#[derive(PartialEq, Eq, Debug, serde::Deserialize, Clone, Hash)]
 pub struct Sheet {
     owner: String,
-    name: String
-    private: bool, // Privacy of Sheet
-    values: HashMap<u64, String> // Change this to an Enum of CellFilled, CellEmpty, CellInt, etc.   
+    name: String,
+    private: bool,
+    // Privacy of Sheet
+    // values: HashMap<u64, String>, // Change this to an Enum of CellFilled, CellEmpty, CellInt, etc.
 }
 
 impl Sheet {
     pub fn default() -> Self {
-        owner: "".to_string(),
-        name: "".to_string(),
-        private: true,
-        values: HashMap::new()
+        Sheet {
+            owner: "".to_string(),
+            name: "".to_string(),
+            private: true,
+            // values: HashMap::new(),
+        }
     }
 
     pub fn new(owner: String, name: String) -> Self {
-        Result {
+        Self {
             owner,
             name,
             private: true,
-            values: HashMap::new(),
+            // values: HashMap::new(),
         }
     }
 
     pub fn owner(&self) -> &String {
-        &self.owner;
+        &self.owner
     }
 
     pub fn name(&self) -> &String {
-        &self.name;
+        &self.name
+    }
+}
+
+// CREATE TABLE publishers
+// (
+// id       INT PRIMARY KEY,
+// username VARCHAR(100) NOT NULL,
+// password VARCHAR(100) NOT NULL
+// );
+// CREATE TABLE sheets
+// (
+// id     INT PRIMARY KEY,
+// title   VARCHAR(100) NOT NULL,
+// sheet_column INT          NOT NULL,
+// sheet_row    INT          NOT NULL,
+// sheet_value  VARCHAR(100) NOT NULL
+// );
+//
+// CREATE TABLE sheet_publisher_relations (
+// id   INT PRIMARY KEY,
+// sheet_id INT,
+// publishers_id INT,
+// );
+// @generated automatically by Diesel CLI.
+// diesel::table! {
+//     publishers (id) {
+//         id -> Integer,
+//         username -> VarChar,
+//         password -> VarChar,
+//     }
+// }
+// diesel::table! {
+//     sheets (id) {
+//         id -> Integer,
+//         title -> Varchar,
+//         sheet_column -> Integer,
+//         sheet_row -> Integer,
+//         sheet_value -> VarChar,
+//     }
+// }
+
+#[derive(Queryable, Selectable, Identifiable, PartialEq, Debug)]
+#[diesel(table_name = crate::schema::sheet_elems)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(primary_key(id))]
+pub struct SheetElem {
+    pub id: i64,
+    sheet_value: String,
+    title: String,
+    sheet_column_identifier: String,
+    sheet_row: i64,
+    sheet_id: i64,
+}
+
+impl SheetElem {
+    pub fn new(
+        id: i64,
+        title: String,
+        sheet_column_identifier: String,
+        sheet_row: i64,
+        sheet_value: String,
+        sheet_id: i64) -> Self {
+        Self {
+            id,
+            title,
+            sheet_column_identifier,
+            sheet_row,
+            sheet_value,
+            sheet_id
+        }
     }
     
+    pub fn default() -> Self {
+        Self {
+            id: 0,
+            title: "".to_string(),
+            sheet_column_identifier: "".to_string(),
+            sheet_row: 0,
+            sheet_value: "".to_string(),
+            sheet_id: 0,
+        }
+    }
 }
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::sheet_elems)]
+pub struct NewSheetElem {
+    pub title: String,
+    pub sheet_column_identifier: String,
+    pub sheet_row: i64,
+    pub sheet_value: String,
+    pub id: i64,
+    pub sheet_id: i64,
+}
+

@@ -8,23 +8,30 @@
 // Result updatePublished(Argument)
 // Result updateSubscription(Argument)
 
-use std::fmt::{Display};
-use std::sync::Mutex;
+// use std::error::Error;
+// use std::fmt::{Display};
+// use std::sync::Mutex;
+
 
 // Third Party Libraries
-use actix_web::{error, HttpRequest, web};
-use actix_web::{get, HttpResponse, post, put, Responder};
+use actix_web::{HttpRequest, post, web};
+use actix_web::{get, HttpResponse, put, Responder};
 use base64::prelude::*;
+// use diesel::row::NamedRow;
 
 // Our files/structs
 use crate::database;
-use crate::publisher;
-use crate::results;
-use crate::results::Result;
+use crate::database::{get_password_of_username, insert_new_credentials, insert_publisher_sheet_elem, password_and_username_in_db};
+use crate::publisher::{NewPublisherCredentials, Publisher};
+// use crate::publisher;
+use crate::results::*;
+use crate::sheet::NewSheetElem;
+
+// Modules
 
 // Type Aliasing
-type Argument = results::Argument;
 type DataStructure = database::DataStructure;
+type RustResult<T, E> = std::result::Result<T, E>;
 
 
 /*
@@ -38,7 +45,6 @@ type DataStructure = database::DataStructure;
  */
 #[put("/api/v1/register")]
 pub async fn register(
-    db: web::Data<Mutex<DataStructure>>,
     req: HttpRequest,
 ) -> impl Responder {
     // Decoding base64 string
@@ -83,23 +89,34 @@ pub async fn register(
     };
 
     // Additions to the database
-    if db.lock().unwrap().addCredentials(
-        auth_vector[0],
-        auth_vector[1]).is_err() {
+    if password_and_username_in_db(auth_vector[0].to_string(),
+                                                    auth_vector[1].to_string()) {
         return web::Json(Result::error("Username already exists".to_string(), vec![]));
     }
+
+    let result_cred_insert = insert_new_credentials(
+        auth_vector[0],
+        auth_vector[1]
+    );
+    if result_cred_insert.is_err() {
+        // TODO: should credentials that error-ed
+        let err_str = result_cred_insert.err().unwrap().to_string();
+        return web::Json(Result::error(
+            format!("Error on inserting new credentials. Error: {err_str}").to_string(), vec![]));
+    }
+
     let successfull_result = Result::new(
         true,
         "Registered Successfully".to_string(),
         vec![]
     );
-    db.lock().unwrap().add(
-        publisher::Publisher::new(
-            auth_vector[0].to_string(),
-            auth_vector[1].to_string(),
-        ),
-        &successfull_result,
-    );
+    // db.lock().unwrap().add(
+    //     publisher::Publisher::new(
+    //         auth_vector[0].to_string(),
+    //         auth_vector[1].to_string(),
+    //     ),
+    //     &successfull_result,
+    // );
     web::Json(successfull_result)
 }
 
@@ -112,140 +129,146 @@ pub async fn register(
 - Creates a new sheet and updates database
 */
 
-#[put("/api/vi/createSheet")]
-async fn createSheet(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) {
-    let argument_given: Argument = req_body.into_inner();
+#[post("/api/v1/createSheet")]
+async fn createSheet(argument: web::Json<Argument>)
+    -> impl Responder  {
+    let publisher_name: &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
+    let payload: &String = &argument.payload;
 
-    let mut this_publisher = match db.get(&argument_given.publisher) {
-        Some(publisher_ref) => publisher_ref,
-        None => return web::Json(Result::new(
-            false,
-            "Publisher not found".to_string(),
-            vec![]
-        )),
+    let result_decoding_sheet: RustResult<NewSheetElem, String> = decoded_sheet(payload, sheet_name);
+    let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
+        result_decoding_sheet.unwrap()
+    } else {
+        let err_msg = result_decoding_sheet.err().unwrap();
+        return web::Json(Result::error(
+            format!("Sheet Encoding is not correct - Payload: {payload} - Error Msg: {err_msg}").to_string(),
+            vec![argument.into_inner()]));
     };
 
-    let mut publisher_sheet_list = this_publisher.get_sheet_list();
+    let result_publisher_of_sheet = get_password_of_username(publisher_name);
+    let publisher_of_sheet = if result_publisher_of_sheet.is_err() {
+        return web::Json(result_publisher_of_sheet.err().unwrap());
+    } else {
+        result_publisher_of_sheet.unwrap()
+    };
 
-    for sheet in publisher_sheet_list {
-        if (sheet.name() == &argument_given.sheet && sheet.owner() == &argument_given.publisher.username()) {
-            let failed_result = Result::new(
-                false,
-                "A sheet you own already has that name!".to_string(),
-                vec![]
-            );
-            return web::Json(failed_result);
-        }
+    let insert_result = insert_publisher_sheet_elem(&new_sheet_element,
+                                                    &publisher_of_sheet);
+
+    if insert_result.is_err() {
+        return web::Json(Result::error(insert_result.err().unwrap(), vec![argument.into_inner()]));
     }
-    
-    publisher_sheet_list.push(Sheet::new(
-        &argument_given.publisher, 
-        &argument_given.sheet));
 
     let successful_result = Result::new(
-        true, 
+        true,
         "Created a new sheet!".to_string(),
          vec![]);
 
-    db.lock().unwrap().update(this_publisher, &successful_result);
-
     web::Json(successful_result)
 }
-
-/* Written by Brooklyn Schmidt
-- Deserializes Argument Json Object
-- Gets the publisher from the database
-- Gets list of sheets that they have
-*/
-
-#[get("/api/vi/getSheets")]
-async fn getSheets(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) {
-    let argument_given: Argument = req_body.into_inner();
-
-    let this_publisher = match db.get(&argument_given.publisher) {
-        Some(publisher_ref) => publisher_ref,
-        None => return web::Json(Result::new(
-            false,
-            "Publisher not found".to_string(),
-            vec![]
-        )),
-    };
-
-    let sheets = this_publisher.get_sheet_list();
-
-    let mut list_of_arguments : Vec<Argument> = vec![];
-
-    for sheet in sheets {
-        let add_argument : Argument = Argument::new(
-            &argument_given.publisher,
-            &argument_given.sheet,
-            "".to_string(),
-            "".to_string(),
-        )
-        list_of_arguments.push(add_argument);
-    }
-
-    let result = Result::new(
-        true, 
-        "Sheets retrieved successfully", 
-        list_of_arguments);
-
-    return web::Json(result);
-
-}
-
-/* Written by Brooklyn Schmidt
-- Deserializes Json Object
-- Retrieves list of sheets from given Publisher
-- Deletes sheet of name "sheet" from vector
-- Update database
-*/
-
-#[delete("/api/vi/deleteSheet")]
-async fn deleteSheet(req_body: Argument) {
-    let argument_given: Argument = req_body.into_inner();
-
-    let this_publisher = match db.get(&argument_given.publisher) {
-        Some(publisher_ref) => publisher_ref,
-        None => return web::Json(Result::new(
-            false,
-            "Publisher not found".to_string(),
-            vec![]
-        )),
-    };
-
-    let mut publisher_sheet_list = this_publisher.get_sheet_list();
-
-    let mut count = 0;
-    let mut found = false;
-    for sheet in publisher_sheet_list {
-        if sheet.name == &argument_given.sheet {
-            found = true;
-            break;
-        }
-        count += 1;
-    }
-
-    if found {
-        publisher_sheet_list.remove(count);
-    } else {
-        return web::Json(Result::new(
-            false,
-            "Sheet name not found",
-            vec![],
-        ))
-    }
-
-    let successful_result = Result::new(
-        true, 
-        "Deleted sheet".to_string(),
-         vec![]);
-
-    db.lock().unwrap().update(this_publisher, &successful_result);
-
-    web::Json(successful_result);
-
-}
+//
+// /* Written by Brooklyn Schmidt
+// - Deserializes Argument Json Object
+// - Gets the publisher from the database
+// - Gets list of sheets that they have
+// */
+//
+// #[get("/api/vi/getSheets")]
+// async fn getSheets(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) -> impl Responder {
+//     let argument_given: Argument = req_body.into_inner();
+//
+//     let publisher_username = argument_given.publisher;
+//     let publisher_password = db.lock().unwrap().getCredentials(publisher_username.as_str()).unwrap();
+//
+//     let publisher: Publisher = Publisher::new(publisher_username, publisher_password.clone());
+//
+//     let this_publisher = match db.lock().unwrap().get(publisher) {
+//         Some(publisher_ref) => publisher_ref,
+//         None => return web::Json(Result::new(
+//             false,
+//             "Publisher not found".to_string(),
+//             vec![]
+//         )),
+//     };
+//
+//     let sheets = this_publisher.get_sheet_list();
+//
+//     let mut list_of_arguments : Vec<Argument> = vec![];
+//
+//     for sheet in sheets {
+//         let add_argument : Argument = Argument::new(
+//             (argument_given.clone()).publisher,
+//             (argument_given.clone()).sheet,
+//             "".to_string(),
+//             "".to_string(),
+//         );
+//         list_of_arguments.push(add_argument);
+//     }
+//
+//     let result = Result::new(
+//         true,
+//         "Sheets retrieved successfully".to_string(),
+//         list_of_arguments);
+//
+//     return web::Json(result);
+// }
+//
+// /* Written by Brooklyn Schmidt
+// - Deserializes Json Object
+// - Retrieves list of sheets from given Publisher
+// - Deletes sheet of name "sheet" from vector
+// - Update database
+// */
+//
+// #[delete("/api/vi/deleteSheet")]
+// async fn deleteSheet(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) -> impl Responder {
+//     let argument_given: Argument = req_body.into_inner();
+//     let publisher_username = argument_given.publisher;
+//     let publisher_password = db.lock().unwrap().getCredentials(publisher_username.as_str()).unwrap();
+//
+//     let publisher: Publisher = Publisher::new(publisher_username, publisher_password.clone());
+//
+//     let this_publisher = match db.lock().unwrap().get(publisher) {
+//         Some(publisher_ref) => publisher_ref,
+//         None => return web::Json(Result::new(
+//             false,
+//             "Publisher not found".to_string(),
+//             vec![]
+//         )),
+//     };
+//
+//     let mut publisher_sheet_list = this_publisher.get_sheet_list();
+//
+//     let mut count = 0;
+//     let mut found = false;
+//     for sheet in publisher_sheet_list {
+//         if sheet.name == &argument_given.sheet {
+//             found = true;
+//             break;
+//         }
+//         count += 1;
+//     }
+//
+//     if found {
+//         publisher_sheet_list.remove(count);
+//     } else {
+//         return web::Json(Result::new(
+//             false,
+//             "Sheet name not found".to_string(),
+//             vec![],
+//         ))
+//     }
+//
+//     let successful_result = Result::new(
+//         true,
+//         "Deleted sheet".to_string(),
+//          vec![]);
+//
+//     db.lock().unwrap().update(publisher.clone(), successful_result.clone());
+//
+//     web::Json(successful_result)
+// }
 
 // #[get("/api/vi/getUpdatesForSubscription")]
 // async fn getUpdatesForSubscription(req_body: Argument) {}
@@ -261,4 +284,25 @@ async fn deleteSheet(req_body: Argument) {
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
+}
+
+fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<NewSheetElem, String> {
+    if (*encoded_sheet).chars().nth(0).expect("parsing issue").to_string() != "$" {
+        return Err("Incorrect Sheet Meta String Length or no $".to_string());
+    }
+    let values = encoded_sheet.split("\n").collect::<Vec<&str>>();
+    if values.len() != 2 {
+        return Err("Incorrect Number of strings, must be 2".to_string());
+    }
+    let meta_sheet_data = values[0];
+    // meta_sheet_data.chars().nth(2)
+    let value = values[1];
+    Ok(NewSheetElem {
+        id: 0,
+        title: sheet_title.clone(),
+        sheet_row: 1,
+        sheet_value: value.to_string(),
+        sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("PArsing issue").to_string(),
+        sheet_id: 0,
+    })
 }

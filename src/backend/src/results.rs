@@ -34,10 +34,10 @@ impl Result {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Argument {
-    publisher: String,
-    sheet: String,
+    pub publisher: String,
+    pub sheet: String,
     id: String,
-    payload: String,
+    pub payload: String,
 }
 
 impl Argument {

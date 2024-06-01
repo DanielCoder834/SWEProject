@@ -12,17 +12,33 @@ mod database;
 mod publisher;
 mod results;
 mod schema;
+mod sheet;
 
 // Our File Functions/Structs
 use database::DataStructure;
-use server_request::{ping, register};
+// use libs::database::DatabaseManager;
+use server_request::{ping, register, createSheet};
+use crate::database::password_and_username_in_db;
 
 async fn do_auth(
     req: ServiceRequest,
     creds: BasicAuth,
 ) -> Result<ServiceRequest, (ActixError, ServiceRequest)> {
-    // TODO: Once Leo has added queries, we do a search for valid users and passwords
-    if creds.user_id() == "user" && creds.password() == Some("pass") {
+    let password = if creds.password().is_some() {
+        creds.password().unwrap()
+    } else {
+        return Err((ErrorUnauthorized("Error on optional unwrap of password. Eg.\
+         No password provided"), req));
+    };
+
+    if creds.user_id() == "user" && password == "pass" {
+        return Ok(req)
+    } else {
+        return Err((ErrorUnauthorized("Not Authorized"), req))
+    }
+    if password_and_username_in_db(
+            creds.user_id().to_string(),
+            password.to_string()) {
         Ok(req)
     } else {
         Err((ErrorUnauthorized("Not Authorized"), req))
@@ -40,10 +56,11 @@ async fn main() -> std::io::Result<()> {
         let new_db = DataStructure::default();
         let db: web::Data<Mutex<DataStructure>> = actix_web::web::Data::new(Mutex::new(new_db));
         App::new()
-            .app_data(db)
             .service(register)
             .wrap(HttpAuthentication::basic(do_auth))
             .service(ping)
+            .service(createSheet)
+
     })
     .bind_openssl("localhost:9443", builder)?
     .run()

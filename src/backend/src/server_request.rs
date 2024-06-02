@@ -25,7 +25,7 @@ use crate::database::{get_password_of_username, insert_new_credentials, insert_s
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
-use crate::sheet::NewSheetElem;
+use crate::sheet::{New_Test_Sheet, NewSheetElem};
 
 // Modules
 
@@ -72,7 +72,7 @@ pub async fn register(
                         "Issue with decoding string to utf".to_string(),
                         vec![])),
                 Ok(v) => v,
-    });
+            });
 
     // username_and_password_unwrapped should look like username:password
     let username_and_password_unwrapped = match decoded_user_name_result {
@@ -89,14 +89,14 @@ pub async fn register(
     };
 
     // Additions to the database
-    if password_and_username_in_db(auth_vector[0].to_string(),
-                                                    auth_vector[1].to_string()) {
-        return web::Json(Result::error("Username already exists".to_string(), vec![]));
-    }
+    // if password_and_username_in_db(auth_vector[0].to_string(),
+    //                                auth_vector[1].to_string()) {
+    //     return web::Json(Result::error("Username already exists".to_string(), vec![]));
+    // }
 
     let result_cred_insert = insert_new_credentials(
         auth_vector[0],
-        auth_vector[1]
+        auth_vector[1],
     );
     if result_cred_insert.is_err() {
         // TODO: should credentials that error-ed
@@ -108,7 +108,7 @@ pub async fn register(
     let successfull_result = Result::new(
         true,
         "Registered Successfully".to_string(),
-        vec![]
+        vec![],
     );
     // db.lock().unwrap().add(
     //     publisher::Publisher::new(
@@ -131,21 +131,8 @@ pub async fn register(
 
 #[post("/api/v1/createSheet")]
 async fn createSheet(argument: web::Json<Argument>)
-    -> impl Responder  {
+                     -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
-    let payload: &String = &argument.payload;
-
-    let result_decoding_sheet: RustResult<NewSheetElem, String> = decoded_sheet(payload, sheet_name);
-    let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
-        result_decoding_sheet.unwrap()
-    } else {
-        let err_msg = result_decoding_sheet.err().unwrap();
-        return web::Json(Result::error(
-            format!("Sheet Encoding is not correct - Payload: {payload} - Error Msg: {err_msg}").to_string(),
-            vec![argument.into_inner()]));
-    };
-
     let result_publisher_of_sheet = get_password_of_username(publisher_name);
     let publisher_of_sheet = if result_publisher_of_sheet.is_err() {
         return web::Json(result_publisher_of_sheet.err().unwrap());
@@ -153,8 +140,39 @@ async fn createSheet(argument: web::Json<Argument>)
         result_publisher_of_sheet.unwrap()
     };
 
-    let insert_result = insert_sheet_relation_elem(&new_sheet_element,
-                                                    &publisher_of_sheet);
+    let sheet_title: &String = &argument.sheet;
+    let new_sheet: New_Test_Sheet = New_Test_Sheet {
+        title: sheet_title.clone(),
+        id: 0,
+        sheet_elem_id: 0,
+    };
+
+    let payload = &argument.payload;
+
+    // Initial Sheet Element
+    let initial_sheet_element: NewSheetElem = if payload.len() != 0 {
+        let result_decoding_sheet = decoded_sheet(payload, sheet_title);
+        let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
+            result_decoding_sheet.unwrap()
+        } else {
+            let err_msg = result_decoding_sheet.err().unwrap();
+            return web::Json(Result::error(
+                format!("Sheet Encoding is not correct - Payload: {payload} - Error Msg: {err_msg}").to_string(),
+                vec![argument.into_inner()]));
+        };
+        new_sheet_element
+    } else {
+        // Add error handling for duplicate ids
+        NewSheetElem::default()
+    };
+
+    // let sheet_id =
+    // let payload: &String = &argument.payload;
+
+    let insert_result = insert_sheet_relation_elem(
+        &new_sheet,
+        &initial_sheet_element,
+        &publisher_of_sheet);
 
     if insert_result.is_err() {
         return web::Json(Result::error(insert_result.err().unwrap(), vec![argument.into_inner()]));
@@ -163,7 +181,7 @@ async fn createSheet(argument: web::Json<Argument>)
     let successful_result = Result::new(
         true,
         "Created a new sheet!".to_string(),
-         vec![]);
+        vec![]);
 
     web::Json(successful_result)
 }
@@ -283,7 +301,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
-    HttpResponse::Ok().body("pong")
+    HttpResponse::Ok().body(format!("pong: {res}"))
 }
 
 fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<NewSheetElem, String> {
@@ -299,7 +317,7 @@ fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<New
     let value = values[1];
     Ok(NewSheetElem {
         id: 0,
-        title: sheet_title.clone(),
+        // title: sheet_title.clone(),
         sheet_row: 1,
         sheet_value: value.to_string(),
         sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("PArsing issue").to_string(),

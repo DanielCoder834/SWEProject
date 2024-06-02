@@ -76,13 +76,31 @@ impl Sheet {
 // }
 
 #[derive(Queryable, Selectable, Identifiable, PartialEq, Debug)]
+#[diesel(table_name = crate::schema::sheets)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[diesel(primary_key(id))]
+pub struct Test_Sheet {
+    pub(crate) id: i32,
+    sheet_elem_id: i32,
+    title: String,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = crate::schema::sheets)]
+#[diesel(primary_key(id))]
+pub struct New_Test_Sheet {
+    pub(crate) id: i32,
+    pub(crate) sheet_elem_id: i32,
+    pub(crate) title: String,
+}
+
+#[derive(Queryable, Selectable, Identifiable, PartialEq, Debug)]
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct SheetElem {
     pub id: i32,
     sheet_value: String,
-    title: String,
     sheet_column_identifier: String,
     sheet_row: i32,
     sheet_id: i32,
@@ -91,14 +109,12 @@ pub struct SheetElem {
 impl SheetElem {
     pub fn new(
         id: i32,
-        title: String,
         sheet_column_identifier: String,
         sheet_row: i32,
         sheet_value: String,
         sheet_id: i32) -> Self {
         Self {
             id,
-            title,
             sheet_column_identifier,
             sheet_row,
             sheet_value,
@@ -109,8 +125,7 @@ impl SheetElem {
     pub fn default() -> Self {
         Self {
             id: 0,
-            title: "".to_string(),
-            sheet_column_identifier: "".to_string(),
+            sheet_column_identifier: "A".to_string(),
             sheet_row: 0,
             sheet_value: "".to_string(),
             sheet_id: 0,
@@ -122,11 +137,22 @@ impl SheetElem {
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(primary_key(id))]
 pub struct NewSheetElem {
-    pub title: String,
+    pub id: i32,
     pub sheet_column_identifier: String,
     pub sheet_row: i32,
     pub sheet_value: String,
-    pub id: i32,
     pub sheet_id: i32,
+}
+
+impl NewSheetElem {
+    pub fn default() -> Self {
+        Self {
+            id: 0,
+            sheet_column_identifier: "A".to_string(),
+            sheet_row: 0,
+            sheet_value: "".to_string(),
+            sheet_id: 0,
+        }
+    }
 }
 

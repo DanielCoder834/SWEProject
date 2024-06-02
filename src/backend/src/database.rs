@@ -1,19 +1,21 @@
 // Third Party Libraries
 use std::collections::HashMap;
+use std::env;
+use diesel::dsl::exists;
+
 // use std::error::Error;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use std::env;
+use diesel::select;
 use dotenv::dotenv;
 
+use crate::{results, schema};
 // Our Files
 use crate::publisher::*;
-use crate::{results, schema};
+use crate::publisher::Publisher;
 // use crate::schema::sheets;
 use crate::schema::publisher_sheets;
-use crate::sheet::{NewSheetElem, SheetElem};
-use crate::publisher::Publisher;
-use crate::schema::sheet_elems::dsl::sheet_elems;
+use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
 
 // Type Aliasing
 type Result = results::Result;
@@ -70,8 +72,7 @@ pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Pub
         .get_result(&mut establish_connection())
 }
 
-pub fn insert_sheet_elem(title: String,
-                         sheet_column_identifier: String,
+pub fn insert_sheet_elem(sheet_column_identifier: String,
                          sheet_row: i32,
                          sheet_value: String,
                          id: i32,
@@ -79,7 +80,6 @@ pub fn insert_sheet_elem(title: String,
 ) -> QueryResult<SheetElem> {
     use crate::schema::sheet_elems;
     let new_sheet_elem = NewSheetElem {
-        title,
         sheet_column_identifier,
         sheet_row,
         sheet_value,
@@ -93,31 +93,45 @@ pub fn insert_sheet_elem(title: String,
         .get_result(conn)
 }
 
-pub fn insert_sheet_relation_elem(new_sheet: &NewSheetElem, publisher: &Publisher) -> RustResults<(), String> {
-    use crate::schema::{sheet_elems, publisher_sheets};
+pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
+                                  new_sheet_elemt: &NewSheetElem,
+                                  publisher: &Publisher) -> RustResults<(), String> {
+    use crate::schema::{publisher_sheets, sheet_elems, sheets};
 
-    let insert_sheet_results =
-    diesel::insert_into(sheet_elems::table)
+    // Inserting new sheet
+    let insert_sheet_result =
+        diesel::insert_into(sheets::table)
         .values(new_sheet)
-        .returning(SheetElem::as_returning())
-        .get_result(&mut establish_connection());
+            .returning(Test_Sheet::as_returning())
+            .get_result(&mut establish_connection());
 
-    if insert_sheet_results.is_err() {
-        let err_msg = insert_sheet_results.err().unwrap().to_string();
+    if insert_sheet_result.is_err() {
+        let err_msg = insert_sheet_result.err().unwrap().to_string();
+        return Err(format!("Error for inserting sheet: {err_msg}"));
+    }
+
+    // Inserting new sheet element
+    let insert_sheet_elem_results =
+        diesel::insert_into(sheet_elems::table)
+            .values(new_sheet_elemt)
+            .returning(SheetElem::as_returning())
+            .get_result(&mut establish_connection());
+
+    if insert_sheet_elem_results.is_err() {
+        let err_msg = insert_sheet_elem_results.err().unwrap().to_string();
         return Err(format!("Error for inserting sheet element: {err_msg}"));
     }
 
-    // Need to make an insertable table for relations
-
+    // Inserting into the junction table
     let new_sheet_publisher = NewPublisherSheet {
         publisher_id: publisher.id,
-        sheets_id: insert_sheet_results.unwrap().id,
+        sheets_id: insert_sheet_result.unwrap().id,
     };
     let relationship_table_insert_result =
-    diesel::insert_into(publisher_sheets::table)
-        .values(&new_sheet_publisher)
-        .returning(PublisherSheet::as_returning())
-        .get_result(&mut establish_connection());
+        diesel::insert_into(publisher_sheets::table)
+            .values(&new_sheet_publisher)
+            .returning(PublisherSheet::as_returning())
+            .get_result(&mut establish_connection());
 
     if relationship_table_insert_result.is_err() {
         let err_msg = relationship_table_insert_result.err().unwrap().to_string();
@@ -147,18 +161,17 @@ pub fn get_password_of_username(passed_username: &String) -> RustResults<Publish
     Ok(res.unwrap())
 }
 
-pub fn password_and_username_in_db(auth_password: String, auth_username: String) -> bool {
-    use crate::schema::publishers::dsl::{publishers, username, password};
+pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> bool {
+    use crate::schema::publishers::dsl::{password, publishers, username};
     // If credentials_count == 1, there is a user, and if credentials_count == 0, there is none
     // Only can be 0 or 1 because of limit(1)
-    let credentials_count: i64 = publishers
+    let exists_credentials = select(exists(publishers
         .filter(username.eq(auth_username))
-        .filter(password.eq(auth_password))
-        .limit(1)
-        .count()
-        .get_result(&mut establish_connection())
-        .expect("Error counting credentials filtered by username and password");
-    return credentials_count == 1;
+        .filter(password.eq(auth_password))))
+        .get_result(&mut establish_connection());
+    return exists_credentials.unwrap();
+    // .filter(password.eq(auth_password))
+    // .limit(1)
 }
 
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]

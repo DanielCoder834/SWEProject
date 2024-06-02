@@ -21,7 +21,7 @@ use base64::prelude::*;
 
 // Our files/structs
 use crate::database;
-use crate::database::{get_password_of_username, insert_new_credentials, insert_publisher_sheet_elem, password_and_username_in_db};
+use crate::database::{get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
@@ -153,7 +153,7 @@ async fn createSheet(argument: web::Json<Argument>)
         result_publisher_of_sheet.unwrap()
     };
 
-    let insert_result = insert_publisher_sheet_elem(&new_sheet_element,
+    let insert_result = insert_sheet_relation_elem(&new_sheet_element,
                                                     &publisher_of_sheet);
 
     if insert_result.is_err() {

@@ -80,22 +80,22 @@ impl Sheet {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct SheetElem {
-    pub id: i64,
+    pub id: i32,
     sheet_value: String,
     title: String,
     sheet_column_identifier: String,
-    sheet_row: i64,
-    sheet_id: i64,
+    sheet_row: i32,
+    sheet_id: i32,
 }
 
 impl SheetElem {
     pub fn new(
-        id: i64,
+        id: i32,
         title: String,
         sheet_column_identifier: String,
-        sheet_row: i64,
+        sheet_row: i32,
         sheet_value: String,
-        sheet_id: i64) -> Self {
+        sheet_id: i32) -> Self {
         Self {
             id,
             title,
@@ -120,12 +120,13 @@ impl SheetElem {
 
 #[derive(Insertable)]
 #[diesel(table_name = crate::schema::sheet_elems)]
+#[diesel(primary_key(id))]
 pub struct NewSheetElem {
     pub title: String,
     pub sheet_column_identifier: String,
-    pub sheet_row: i64,
+    pub sheet_row: i32,
     pub sheet_value: String,
-    pub id: i64,
-    pub sheet_id: i64,
+    pub id: i32,
+    pub sheet_id: i32,
 }
 

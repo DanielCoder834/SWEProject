@@ -1,26 +1,41 @@
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    publisher_sheets (sheets_id, publisher_id) {
+        sheets_id -> Int4,
+        publisher_id -> Int4,
+    }
+}
+
 diesel::table! {
     publishers (id) {
-        id -> Int8,
-        username -> VarChar,
-        password -> VarChar,
+        id -> Int4,
+        #[max_length = 100]
+        username -> Varchar,
+        #[max_length = 100]
+        password -> Varchar,
     }
 }
+
 diesel::table! {
     sheet_elems (id) {
-        id -> Int8,
+        id -> Int4,
+        #[max_length = 100]
         title -> Varchar,
-        sheet_column_identifier -> VarChar,
-        sheet_row -> Int8,
-        sheet_value -> VarChar,
-        sheet_id -> Int8,
+        #[max_length = 100]
+        sheet_column_identifier -> Varchar,
+        sheet_row -> Int4,
+        #[max_length = 100]
+        sheet_value -> Varchar,
+        sheet_id -> Int4,
     }
 }
 
+diesel::joinable!(publisher_sheets -> publishers (publisher_id));
+diesel::joinable!(publisher_sheets -> sheet_elems (sheets_id));
 
-diesel::table!{
-    publisher_sheets(publisher_sheets_id) {
-        sheet_elem_id -> Int8,
-        publisher_id -> Int8,
-        publisher_sheets_id -> Int8
-    }
-}
+diesel::allow_tables_to_appear_in_same_query!(
+    publisher_sheets,
+    publishers,
+    sheet_elems,
+);

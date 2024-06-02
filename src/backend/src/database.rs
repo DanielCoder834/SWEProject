@@ -72,10 +72,10 @@ pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Pub
 
 pub fn insert_sheet_elem(title: String,
                          sheet_column_identifier: String,
-                         sheet_row: i64,
+                         sheet_row: i32,
                          sheet_value: String,
-                         id: i64,
-                         sheet_id: i64,
+                         id: i32,
+                         sheet_id: i32,
 ) -> QueryResult<SheetElem> {
     use crate::schema::sheet_elems;
     let new_sheet_elem = NewSheetElem {
@@ -93,23 +93,8 @@ pub fn insert_sheet_elem(title: String,
         .get_result(conn)
 }
 
-pub fn insert_publisher_sheet_elem(new_sheet: &NewSheetElem, publisher: &Publisher) -> RustResults<(), String> {
+pub fn insert_sheet_relation_elem(new_sheet: &NewSheetElem, publisher: &Publisher) -> RustResults<(), String> {
     use crate::schema::{sheet_elems, publisher_sheets};
-    // let db_element_publisher = NewPublisherCredentials {
-    //     id: &publisher.id,
-    //     username: &*publisher.username,
-    //     password: &*publisher.password,
-    // };
-    // // let insert_publisher_results =
-    //     diesel::insert_into(publishers::table)
-    //     .values(&db_element_publisher)
-    //     .returning(Publisher::as_returning())
-    //     .get_result(&mut establish_connection());
-    //
-    // if insert_publisher_results.is_err() {
-    //     let err_msg = insert_publisher_results.err().unwrap().to_string();
-    //     return Err(format!("Error for inserting publishers: {err_msg}"));
-    // }
 
     let insert_sheet_results =
     diesel::insert_into(sheet_elems::table)
@@ -126,7 +111,7 @@ pub fn insert_publisher_sheet_elem(new_sheet: &NewSheetElem, publisher: &Publish
 
     let new_sheet_publisher = NewPublisherSheet {
         publisher_id: publisher.id,
-        sheet_elem_id: insert_sheet_results.unwrap().id,
+        sheets_id: insert_sheet_results.unwrap().id,
     };
     let relationship_table_insert_result =
     diesel::insert_into(publisher_sheets::table)
@@ -141,6 +126,8 @@ pub fn insert_publisher_sheet_elem(new_sheet: &NewSheetElem, publisher: &Publish
 
     Ok(())
 }
+
+// pub fn delete_sheet()
 
 // pub fn get_sheet_elem(&mut self, publisher: &str, sheet_title: &str) -> QueryResult<Vec<SheetElem>> {
 //     diesel
@@ -175,18 +162,45 @@ pub fn password_and_username_in_db(auth_password: String, auth_username: String)
 }
 
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
-#[diesel(belongs_to(SheetElem))]
 #[diesel(belongs_to(Publisher))]
 #[diesel(table_name = publisher_sheets)]
-#[diesel(primary_key(sheet_elem_id, publisher_id))]
+#[diesel(primary_key(sheets_id, publisher_id))]
 struct PublisherSheet {
-    pub publisher_id: i64,
-    pub sheet_elem_id: i64,
+    pub publisher_id: i32,
+    pub sheets_id: i32,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = publisher_sheets)]
 struct NewPublisherSheet {
-    pub publisher_id: i64,
-    pub sheet_elem_id: i64,
+    pub publisher_id: i32,
+    pub sheets_id: i32,
 }
+
+
+// diesel::table! {
+//     publishers (id) {
+//         id -> Integer,
+//         username -> VarChar,
+//         password -> VarChar,
+//     }
+// }
+// diesel::table! {
+//     sheet_elems (id) {
+//         id -> Integer,
+//         title -> Varchar,
+//         sheet_column_identifier -> VarChar,
+//         sheet_row -> Integer,
+//         sheet_value -> VarChar,
+//         sheet_id -> Integer,
+//     }
+// }
+//
+//
+// diesel::table!{
+//     publisher_sheets(publisher_sheets_id) {
+//         sheet_elem_id -> Integer,
+//         publisher_id -> Integer,
+//         publisher_sheets_id -> Integer
+//     }
+// }

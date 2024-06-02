@@ -7,7 +7,7 @@ Clone, Queryable, Selectable, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct Publisher {
-    pub id: i64,
+    pub id: i32,
     pub username: String,
     pub password: String,
     // sheet_list: Vec<Sheet>,
@@ -22,7 +22,7 @@ impl Publisher {
             // sheet_list: vec![],
         }
     }
-    pub fn new(username: String, password: String, id: i64) -> Self {
+    pub fn new(username: String, password: String, id: i32) -> Self {
         Publisher {
             id,
             username: username.clone(),
@@ -42,8 +42,9 @@ impl Publisher {
 
 #[derive(Insertable)]
 #[diesel(table_name = publishers)]
+#[diesel(primary_key(id))]
 pub struct NewPublisherCredentials<'a> {
-    pub id: &'a i64,
+    pub id: &'a i32,
     pub username: &'a str,
     pub password: &'a str,
 }

@@ -8,6 +8,7 @@ use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::select;
 use dotenv::dotenv;
+use uuid::Uuid;
 
 use crate::{results, schema};
 // Our Files
@@ -15,41 +16,13 @@ use crate::publisher::*;
 use crate::publisher::Publisher;
 // use crate::schema::sheets;
 use crate::schema::{publisher_sheets, sheets};
+use crate::schema::publishers::dsl::publishers;
 use crate::schema::sheets::{title};
 use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
 
 // Type Aliasing
 type Result = results::Result;
 type RustResults<T, E> = std::result::Result<T, E>;
-
-#[derive(serde::Deserialize)]
-pub struct DataStructure {
-    pub storage: HashMap<Publisher, Result>,
-}
-
-impl DataStructure {
-    pub fn default() -> Self {
-        DataStructure {
-            storage: HashMap::new(),
-            // credentialStorage: HashMap::new(),
-        }
-    }
-
-    pub fn add(&mut self, key: Publisher, value: &Result) -> Option<Result> {
-        self.storage.insert(key, value.clone())
-    }
-    pub fn delete(&mut self, key: Publisher) -> Option<Result> {
-        self.storage.remove(&key)
-    }
-    pub fn get(&mut self, key: Publisher) -> Option<&Result> {
-        self.storage.get(&key)
-    }
-    pub fn update(&mut self, key: Publisher, new_result: Result) {
-        if let Some(result) = self.storage.get_mut(&key) {
-            *result = new_result;
-        }
-    }
-}
 
 
 fn establish_connection() -> PgConnection {
@@ -71,6 +44,13 @@ pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Pub
         .values(&new_credentials)
         .returning(Publisher::as_returning())
         .get_result(&mut establish_connection())
+}
+
+pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
+    use crate::schema::publishers::dsl::{publishers};
+    publishers
+        .select(Publisher::as_select())
+        .get_results(&mut establish_connection())
 }
 
 pub fn insert_sheet_elem(sheet_column_identifier: String,

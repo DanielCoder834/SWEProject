@@ -32,11 +32,22 @@ diesel::table! {
 diesel::table! {
     sheets (id) {
         id -> Int4,
-        sheet_elem_id -> Int4,
         #[max_length = 100]
         title -> Varchar,
     }
 }
+
+// diesel::table! {
+//     updates (id) {
+//         id -> Int4,
+//         owner_id -> Int4,
+//         #[max_length = 1000]
+//         update_value -> Varchar,
+//         ownership -> crate::updates::Ownership,
+//     }
+// }
+
+// One to Many Relation from user to updates
 
 diesel::joinable!(publisher_sheets -> publishers (publisher_id));
 diesel::joinable!(publisher_sheets -> sheets (sheets_id));

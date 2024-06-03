@@ -81,7 +81,6 @@ impl Sheet {
 #[diesel(primary_key(id))]
 pub struct Test_Sheet {
     pub(crate) id: i32,
-    sheet_elem_id: i32,
     pub title: String,
 }
 
@@ -90,7 +89,6 @@ pub struct Test_Sheet {
 #[diesel(primary_key(id))]
 pub struct New_Test_Sheet {
     pub(crate) id: i32,
-    pub(crate) sheet_elem_id: i32,
     pub(crate) title: String,
 }
 

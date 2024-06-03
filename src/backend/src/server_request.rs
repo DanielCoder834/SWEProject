@@ -17,6 +17,7 @@
 use actix_web::{HttpRequest, post, web};
 use actix_web::{get, HttpResponse, put, Responder};
 use base64::prelude::*;
+use uuid::Uuid;
 // use diesel::row::NamedRow;
 
 // Our files/structs
@@ -26,7 +27,8 @@ use crate::database::{delete_sheet_by_sheet_name_and_user,
                       insert_new_credentials,
                       insert_sheet_relation_elem,
                       password_and_username_in_db,
-                      get_sheets_by_a_publisher};
+                      get_sheets_by_a_publisher,
+                      get_all_publishers};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
@@ -35,7 +37,6 @@ use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 // Modules
 
 // Type Aliasing
-type DataStructure = database::DataStructure;
 type RustResult<T, E> = std::result::Result<T, E>;
 
 
@@ -119,8 +120,29 @@ pub async fn register(
     web::Json(successfull_result)
 }
 
-// #[get("/api/vi/getPublishers")]
-// async fn getPublishers() {}
+/* Written by Daniel Kaplan
+- Gets all the publishers from the database
+- On success returns all publishers of newly created argument objects
+*/
+#[get("/api/v1/getPublishers")]
+async fn getPublishers() -> impl Responder {
+    let all_publishers_result = get_all_publishers();
+    if all_publishers_result.is_err() {
+        let err_msg = all_publishers_result.err().unwrap().to_string();
+        return web::Json(Result::error(format!("Error retrieving all publishers: {err_msg}"),
+                             vec![]));
+    }
+    let all_publishers = all_publishers_result.unwrap()
+        .into_iter().map( |publisher|
+                    Argument::new(publisher.username,
+                                  "".to_string(),
+                                  "".to_string(),
+                                  "".to_string())).collect::<Vec<Argument>>();
+
+    web::Json(Result::new(true, "Successfully got all publishers".to_string(), all_publishers))
+}
+
+
 
 /* Written by Brooklyn Schmidt and Daniel Kaplan
 - Deserializes Argument Json Object
@@ -143,7 +165,6 @@ async fn createSheet(argument: web::Json<Argument>)
     let new_sheet: New_Test_Sheet = New_Test_Sheet {
         title: sheet_title.clone(),
         id: 0,
-        sheet_elem_id: 0,
     };
 
     let payload = &argument.payload;

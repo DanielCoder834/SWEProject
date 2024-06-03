@@ -10,7 +10,6 @@ pub struct Publisher {
     pub id: i32,
     pub username: String,
     pub password: String,
-    // sheet_list: Vec<Sheet>,
 }
 
 impl Publisher {
@@ -19,7 +18,6 @@ impl Publisher {
             id: 0,
             username: "".to_string(),
             password: "".to_string(),
-            // sheet_list: vec![],
         }
     }
     pub fn new(username: String, password: String, id: i32) -> Self {
@@ -27,7 +25,6 @@ impl Publisher {
             id,
             username: username.clone(),
             password,
-            // sheet_list: vec![],
         }
     }
 
@@ -35,9 +32,6 @@ impl Publisher {
         &self.username
     }
 
-    // pub fn get_sheet_list(&self) -> &Vec<Sheet> {
-    //     // &self.sheet_list
-    // }
 }
 
 #[derive(Insertable)]

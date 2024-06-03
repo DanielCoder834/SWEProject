@@ -14,7 +14,8 @@ use crate::{results, schema};
 use crate::publisher::*;
 use crate::publisher::Publisher;
 // use crate::schema::sheets;
-use crate::schema::publisher_sheets;
+use crate::schema::{publisher_sheets, sheets};
+use crate::schema::sheets::{title};
 use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
 
 // Type Aliasing
@@ -101,7 +102,7 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
     // Inserting new sheet
     let insert_sheet_result =
         diesel::insert_into(sheets::table)
-        .values(new_sheet)
+            .values(new_sheet)
             .returning(Test_Sheet::as_returning())
             .get_result(&mut establish_connection());
 
@@ -143,9 +144,55 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
 
 // pub fn delete_sheet()
 
-// pub fn get_sheet_elem(&mut self, publisher: &str, sheet_title: &str) -> QueryResult<Vec<SheetElem>> {
-//     diesel
-// }
+pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
+    use crate::schema::{sheets};
+    PublisherSheet::belonging_to(publisher)
+        .inner_join(sheets::table)
+        .select(Test_Sheet::as_select())
+        .load(&mut establish_connection())
+        .expect("Oops")
+}
+
+pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title: &String) -> RustResults<(usize, usize), Result> {
+    use crate::schema::{sheets, publisher_sheets};
+
+    let publisher = get_password_of_username(publisher_name);
+    let publisher_no_err = if publisher.is_err() {
+        return Err(publisher.err().unwrap());
+    } else {
+        publisher.unwrap()
+    };
+
+    let sheets_to_delete: Vec<Test_Sheet> = PublisherSheet::belonging_to(&publisher_no_err)
+        .inner_join(sheets::table)
+        .filter(title.eq(sheet_title))
+        .select(Test_Sheet::as_select())
+        .load(&mut establish_connection())
+        .expect("Oops");
+
+    let sheet_ids_to_delete: &Vec<i32> =
+        &sheets_to_delete.iter().map(|sheet| sheet.id).collect::<Vec<i32>>();
+
+    let delete_sheet_relation =
+        diesel::delete(publisher_sheets::dsl::publisher_sheets.filter(
+            publisher_sheets::dsl::sheets_id.eq_any(sheet_ids_to_delete)
+        )).execute(&mut establish_connection());
+    let delete_sheet_relation_result = if delete_sheet_relation.is_err() {
+        let err_msg = delete_sheet_relation.err().unwrap().to_string();
+        return Err(Result::error(err_msg, vec![]));
+    } else {
+        delete_sheet_relation.unwrap()
+    };
+
+    let delete_sheet_result =
+        diesel::delete(sheets::dsl::sheets.filter(sheets::dsl::id.eq_any(sheet_ids_to_delete))).execute(&mut establish_connection());
+    if delete_sheet_result.is_err() {
+        let err_msg = delete_sheet_result.err().unwrap().to_string();
+        Err(Result::error(err_msg, vec![]))
+    } else {
+        Ok((delete_sheet_result.unwrap(), delete_sheet_relation_result))
+    }
+}
 
 pub fn get_password_of_username(passed_username: &String) -> RustResults<Publisher, Result> {
     use crate::schema::publishers::dsl::{publishers, username};
@@ -163,15 +210,11 @@ pub fn get_password_of_username(passed_username: &String) -> RustResults<Publish
 
 pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> bool {
     use crate::schema::publishers::dsl::{password, publishers, username};
-    // If credentials_count == 1, there is a user, and if credentials_count == 0, there is none
-    // Only can be 0 or 1 because of limit(1)
     let exists_credentials = select(exists(publishers
         .filter(username.eq(auth_username))
         .filter(password.eq(auth_password))))
         .get_result(&mut establish_connection());
     return exists_credentials.unwrap();
-    // .filter(password.eq(auth_password))
-    // .limit(1)
 }
 
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
@@ -189,31 +232,3 @@ struct NewPublisherSheet {
     pub publisher_id: i32,
     pub sheets_id: i32,
 }
-
-
-// diesel::table! {
-//     publishers (id) {
-//         id -> Integer,
-//         username -> VarChar,
-//         password -> VarChar,
-//     }
-// }
-// diesel::table! {
-//     sheet_elems (id) {
-//         id -> Integer,
-//         title -> Varchar,
-//         sheet_column_identifier -> VarChar,
-//         sheet_row -> Integer,
-//         sheet_value -> VarChar,
-//         sheet_id -> Integer,
-//     }
-// }
-//
-//
-// diesel::table!{
-//     publisher_sheets(publisher_sheets_id) {
-//         sheet_elem_id -> Integer,
-//         publisher_id -> Integer,
-//         publisher_sheets_id -> Integer
-//     }
-// }

@@ -17,7 +17,7 @@ mod sheet;
 // Our File Functions/Structs
 use database::DataStructure;
 // use libs::database::DatabaseManager;
-use server_request::{ping, register, createSheet};
+use server_request::{ping, register, createSheet, deleteSheet, getSheets};
 use crate::database::password_and_username_in_db;
 
 async fn do_auth(
@@ -49,7 +49,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         let authorized_routes = web::scope("")
             .wrap(HttpAuthentication::basic(do_auth))
-            .service(createSheet);
+            .service(createSheet)
+            .service(getSheets)
+            .service(deleteSheet);
         App::new()
             .service(register)
             .service(ping)

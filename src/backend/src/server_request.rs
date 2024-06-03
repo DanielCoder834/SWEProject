@@ -21,11 +21,16 @@ use base64::prelude::*;
 
 // Our files/structs
 use crate::database;
-use crate::database::{get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db};
+use crate::database::{delete_sheet_by_sheet_name_and_user,
+                      get_password_of_username,
+                      insert_new_credentials,
+                      insert_sheet_relation_elem,
+                      password_and_username_in_db,
+                      get_sheets_by_a_publisher};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
-use crate::sheet::{New_Test_Sheet, NewSheetElem};
+use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 
 // Modules
 
@@ -35,7 +40,7 @@ type RustResult<T, E> = std::result::Result<T, E>;
 
 
 /*
- * Written by Daniel. K
+ * Written by Daniel Kaplan
  * Simple: Registers a new user to the database
  * Pipeline from header element to username and password:
  * Header Elements { ..., Authentication: <base64 encoded string>, ... } ->
@@ -43,7 +48,7 @@ type RustResult<T, E> = std::result::Result<T, E>;
  * String::utf8(Decode(<base64 encoded string>)) -> username:password ->
  * username:password.split(" ") -> vec[username, password] :)
  */
-#[put("/api/v1/register")]
+#[get("/api/v1/register")]
 pub async fn register(
     req: HttpRequest,
 ) -> impl Responder {
@@ -89,10 +94,10 @@ pub async fn register(
     };
 
     // Additions to the database
-    // if password_and_username_in_db(auth_vector[0].to_string(),
-    //                                auth_vector[1].to_string()) {
-    //     return web::Json(Result::error("Username already exists".to_string(), vec![]));
-    // }
+    if password_and_username_in_db(auth_vector[0],
+                                   auth_vector[1]) {
+        return web::Json(Result::error("Username or Password already exists".to_string(), vec![]));
+    }
 
     let result_cred_insert = insert_new_credentials(
         auth_vector[0],
@@ -110,20 +115,14 @@ pub async fn register(
         "Registered Successfully".to_string(),
         vec![],
     );
-    // db.lock().unwrap().add(
-    //     publisher::Publisher::new(
-    //         auth_vector[0].to_string(),
-    //         auth_vector[1].to_string(),
-    //     ),
-    //     &successfull_result,
-    // );
+
     web::Json(successfull_result)
 }
 
 // #[get("/api/vi/getPublishers")]
 // async fn getPublishers() {}
 
-/* Written by Brooklyn Schmidt
+/* Written by Brooklyn Schmidt and Daniel Kaplan
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Creates a new sheet and updates database
@@ -186,107 +185,63 @@ async fn createSheet(argument: web::Json<Argument>)
     web::Json(successful_result)
 }
 //
-// /* Written by Brooklyn Schmidt
+// /* Written by Brooklyn Schmidt and Daniel Kaplan
 // - Deserializes Argument Json Object
 // - Gets the publisher from the database
 // - Gets list of sheets that they have
 // */
 //
-// #[get("/api/vi/getSheets")]
-// async fn getSheets(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) -> impl Responder {
-//     let argument_given: Argument = req_body.into_inner();
+#[post("/api/v1/getSheets")]
+async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
+    let publisher_username = &argument.publisher;
+
+    let result_publisher_of_sheet = get_password_of_username(publisher_username);
+    let publisher_of_sheet = if result_publisher_of_sheet.is_err() {
+        return web::Json(result_publisher_of_sheet.err().unwrap());
+    } else {
+        result_publisher_of_sheet.unwrap()
+    };
+    let sheets: Vec<Test_Sheet> = get_sheets_by_a_publisher(&publisher_of_sheet);
+
+    let list_of_arguments: Vec<Argument> = sheets.into_iter().map(|sheet| Argument::new(
+        publisher_username.clone(), sheet.title, "".to_string(), "".to_string()
+    )).collect();
+
+    let result = Result::new(
+        true,
+        "Sheets retrieved successfully".to_string(),
+        list_of_arguments);
+
+    return web::Json(result);
+}
+
 //
-//     let publisher_username = argument_given.publisher;
-//     let publisher_password = db.lock().unwrap().getCredentials(publisher_username.as_str()).unwrap();
-//
-//     let publisher: Publisher = Publisher::new(publisher_username, publisher_password.clone());
-//
-//     let this_publisher = match db.lock().unwrap().get(publisher) {
-//         Some(publisher_ref) => publisher_ref,
-//         None => return web::Json(Result::new(
-//             false,
-//             "Publisher not found".to_string(),
-//             vec![]
-//         )),
-//     };
-//
-//     let sheets = this_publisher.get_sheet_list();
-//
-//     let mut list_of_arguments : Vec<Argument> = vec![];
-//
-//     for sheet in sheets {
-//         let add_argument : Argument = Argument::new(
-//             (argument_given.clone()).publisher,
-//             (argument_given.clone()).sheet,
-//             "".to_string(),
-//             "".to_string(),
-//         );
-//         list_of_arguments.push(add_argument);
-//     }
-//
-//     let result = Result::new(
-//         true,
-//         "Sheets retrieved successfully".to_string(),
-//         list_of_arguments);
-//
-//     return web::Json(result);
-// }
-//
-// /* Written by Brooklyn Schmidt
+// /* Written by Brooklyn Schmidt and Daniel Kaplan
 // - Deserializes Json Object
 // - Retrieves list of sheets from given Publisher
 // - Deletes sheet of name "sheet" from vector
 // - Update database
 // */
 //
-// #[delete("/api/vi/deleteSheet")]
-// async fn deleteSheet(req_body: web::Json<Argument>, db: web::Data<Mutex<DataStructure>>) -> impl Responder {
-//     let argument_given: Argument = req_body.into_inner();
-//     let publisher_username = argument_given.publisher;
-//     let publisher_password = db.lock().unwrap().getCredentials(publisher_username.as_str()).unwrap();
-//
-//     let publisher: Publisher = Publisher::new(publisher_username, publisher_password.clone());
-//
-//     let this_publisher = match db.lock().unwrap().get(publisher) {
-//         Some(publisher_ref) => publisher_ref,
-//         None => return web::Json(Result::new(
-//             false,
-//             "Publisher not found".to_string(),
-//             vec![]
-//         )),
-//     };
-//
-//     let mut publisher_sheet_list = this_publisher.get_sheet_list();
-//
-//     let mut count = 0;
-//     let mut found = false;
-//     for sheet in publisher_sheet_list {
-//         if sheet.name == &argument_given.sheet {
-//             found = true;
-//             break;
-//         }
-//         count += 1;
-//     }
-//
-//     if found {
-//         publisher_sheet_list.remove(count);
-//     } else {
-//         return web::Json(Result::new(
-//             false,
-//             "Sheet name not found".to_string(),
-//             vec![],
-//         ))
-//     }
-//
-//     let successful_result = Result::new(
-//         true,
-//         "Deleted sheet".to_string(),
-//          vec![]);
-//
-//     db.lock().unwrap().update(publisher.clone(), successful_result.clone());
-//
-//     web::Json(successful_result)
-// }
+#[post("/api/v1/deleteSheet")]
+async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
+    let publisher_name: &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
+
+    let delete_sheet_result = delete_sheet_by_sheet_name_and_user(publisher_name, sheet_name);
+
+    if delete_sheet_result.is_err() {
+        return web::Json(delete_sheet_result.err().unwrap());
+    }
+
+    let (sheet_deletion_count, relation_deletion_count) = delete_sheet_result.unwrap();
+    let successful_result = Result::new(
+        true,
+        format!("Deleted sheet: {sheet_deletion_count} - Deleted Relatons: {relation_deletion_count}"),
+         vec![]);
+
+    web::Json(successful_result)
+}
 
 // #[get("/api/vi/getUpdatesForSubscription")]
 // async fn getUpdatesForSubscription(req_body: Argument) {}
@@ -301,7 +256,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
-    HttpResponse::Ok().body(format!("pong: {res}"))
+    HttpResponse::Ok().body("pong")
 }
 
 fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<NewSheetElem, String> {

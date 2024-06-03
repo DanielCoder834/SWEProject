@@ -82,7 +82,7 @@ impl Sheet {
 pub struct Test_Sheet {
     pub(crate) id: i32,
     sheet_elem_id: i32,
-    title: String,
+    pub title: String,
 }
 
 #[derive(Insertable)]

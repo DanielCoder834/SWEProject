@@ -30,7 +30,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    sheets (id, sheet_elem_id) {
+    sheets (id) {
         id -> Int4,
         sheet_elem_id -> Int4,
         #[max_length = 100]
@@ -39,7 +39,7 @@ diesel::table! {
 }
 
 diesel::joinable!(publisher_sheets -> publishers (publisher_id));
-diesel::joinable!(publisher_sheets -> sheet_elems (sheets_id));
+diesel::joinable!(publisher_sheets -> sheets (sheets_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     publisher_sheets,

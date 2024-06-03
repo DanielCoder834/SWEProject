@@ -24,9 +24,6 @@ mod tests {
                 .service(register))
                 .await;
         let basicAuth = Basic::new("user", Some("pass"));
-        // let header = test::TestRequest::append_header((
-        //
-        // ));
         let req = test::TestRequest::put().uri("/api/v1/register")
             .insert_header((
                     actix_web::http::header::AUTHORIZATION,

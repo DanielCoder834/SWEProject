@@ -6,3 +6,9 @@
 src/backend/target/.rustc_info.json
 /.idea
 src/backend/target/.rustc_info.json
+**/src/backend/target
+/src/backend/target/debug
+/src/backend/key.pem
+/src/backend/cert.pem
+src/backend/cert.pem
+src/backend/key.pem

@@ -12,17 +12,27 @@ mod database;
 mod publisher;
 mod results;
 mod schema;
+mod sheet;
 
 // Our File Functions/Structs
 use database::DataStructure;
-use server_request::{ping, register};
+// use libs::database::DatabaseManager;
+use server_request::{ping, register, createSheet, deleteSheet, getSheets};
+use crate::database::password_and_username_in_db;
 
 async fn do_auth(
     req: ServiceRequest,
     creds: BasicAuth,
 ) -> Result<ServiceRequest, (ActixError, ServiceRequest)> {
-    // TODO: Once Leo has added queries, we do a search for valid users and passwords
-    if creds.user_id() == "user" && creds.password() == Some("pass") {
+    let password = if creds.password().is_some() {
+        creds.password().unwrap()
+    } else {
+        return Err((ErrorUnauthorized("Error on optional unwrap of password. Eg.\
+         No password provided"), req));
+    };
+    if password_and_username_in_db(
+            creds.user_id(),
+            password) {
         Ok(req)
     } else {
         Err((ErrorUnauthorized("Not Authorized"), req))
@@ -37,13 +47,15 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
-        let new_db = DataStructure::default();
-        let db: web::Data<Mutex<DataStructure>> = actix_web::web::Data::new(Mutex::new(new_db));
-        App::new()
-            .app_data(db)
-            .service(register)
+        let authorized_routes = web::scope("")
             .wrap(HttpAuthentication::basic(do_auth))
+            .service(createSheet)
+            .service(getSheets)
+            .service(deleteSheet);
+        App::new()
+            .service(register)
             .service(ping)
+            .service(authorized_routes)
     })
     .bind_openssl("localhost:9443", builder)?
     .run()

@@ -1,4 +1,5 @@
 use diesel::{Identifiable, Insertable, Queryable, Selectable};
+use uuid::Uuid;
 use crate::schema::publishers;
 
 #[derive(PartialEq, Hash, Eq, Debug, serde::Deserialize,
@@ -7,7 +8,7 @@ Clone, Queryable, Selectable, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct Publisher {
-    pub id: i32,
+    pub id: Uuid,
     pub username: String,
     pub password: String,
 }
@@ -15,12 +16,12 @@ pub struct Publisher {
 impl Publisher {
     pub fn default() -> Self {
         Publisher {
-            id: 0,
+            id: Uuid::new_v4(),
             username: "".to_string(),
             password: "".to_string(),
         }
     }
-    pub fn new(username: String, password: String, id: i32) -> Self {
+    pub fn new(username: String, password: String, id: Uuid) -> Self {
         Publisher {
             id,
             username: username.clone(),
@@ -38,7 +39,7 @@ impl Publisher {
 #[diesel(table_name = publishers)]
 #[diesel(primary_key(id))]
 pub struct NewPublisherCredentials<'a> {
-    pub id: &'a i32,
+    pub id: &'a Uuid,
     pub username: &'a str,
     pub password: &'a str,
 }

@@ -164,7 +164,7 @@ async fn createSheet(argument: web::Json<Argument>)
     let sheet_title: &String = &argument.sheet;
     let new_sheet: New_Test_Sheet = New_Test_Sheet {
         title: sheet_title.clone(),
-        id: 0,
+        id: Uuid::new_v4(),
     };
 
     let payload = &argument.payload;
@@ -292,11 +292,11 @@ fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<New
     // meta_sheet_data.chars().nth(2)
     let value = values[1];
     Ok(NewSheetElem {
-        id: 0,
+        id: Uuid::new_v4(),
         // title: sheet_title.clone(),
         sheet_row: 1,
         sheet_value: value.to_string(),
         sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("PArsing issue").to_string(),
-        sheet_id: 0,
+        sheet_id: Uuid::new_v4(),
     })
 }

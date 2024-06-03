@@ -35,7 +35,7 @@ fn establish_connection() -> PgConnection {
 
 pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Publisher> {
     let new_credentials = NewPublisherCredentials {
-        id: &0,
+        id: &Uuid::new_v4(),
         username,
         password,
     };
@@ -56,8 +56,8 @@ pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
 pub fn insert_sheet_elem(sheet_column_identifier: String,
                          sheet_row: i32,
                          sheet_value: String,
-                         id: i32,
-                         sheet_id: i32,
+                         id: Uuid,
+                         sheet_id: Uuid,
 ) -> QueryResult<SheetElem> {
     use crate::schema::sheet_elems;
     let new_sheet_elem = NewSheetElem {
@@ -150,8 +150,8 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         .load(&mut establish_connection())
         .expect("Oops");
 
-    let sheet_ids_to_delete: &Vec<i32> =
-        &sheets_to_delete.iter().map(|sheet| sheet.id).collect::<Vec<i32>>();
+    let sheet_ids_to_delete: &Vec<Uuid> =
+        &sheets_to_delete.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
 
     let delete_sheet_relation =
         diesel::delete(publisher_sheets::dsl::publisher_sheets.filter(
@@ -202,13 +202,13 @@ pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> 
 #[diesel(table_name = publisher_sheets)]
 #[diesel(primary_key(sheets_id, publisher_id))]
 struct PublisherSheet {
-    pub publisher_id: i32,
-    pub sheets_id: i32,
+    pub publisher_id: Uuid,
+    pub sheets_id: Uuid,
 }
 
 #[derive(Insertable)]
 #[diesel(table_name = publisher_sheets)]
 struct NewPublisherSheet {
-    pub publisher_id: i32,
-    pub sheets_id: i32,
+    pub publisher_id: Uuid,
+    pub sheets_id: Uuid,
 }

@@ -1,4 +1,4 @@
-use diesel::{AsExpression, FromSqlRow, Identifiable, Insertable, Queryable, Selectable, SqlType};
+use diesel::{AsExpression, FromSqlRow, Identifiable, Insertable, Queryable, QueryId, Selectable, SqlType};
 use uuid::Uuid;
 use crate::schema::updates;
 
@@ -7,6 +7,7 @@ use diesel::backend::Backend;
 use diesel::serialize::{self, IsNull, Output, ToSql};
 use diesel::deserialize::{self, FromSql};
 use diesel::pg::{Pg, PgValue};
+// use diesel::sql_types::{Integer};
 // use diesel::not_none;
 
 #[derive(SqlType, PartialEq, Hash, Eq, Debug, serde::Deserialize,
@@ -15,7 +16,7 @@ Clone, Queryable, Selectable, Identifiable)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct Updates {
-    id: Uuid,
+    id: i32,
     owner_id: Uuid,
     ownership: Ownership,
     update_value: String,
@@ -31,7 +32,7 @@ pub struct NewUpdates {
 }
 
 
-#[derive(SqlType)]
+#[derive(SqlType, QueryId)]
 #[diesel(postgres_type(name = "My_OwnershipType"))]
 pub struct OwnershipType;
 

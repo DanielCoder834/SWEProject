@@ -202,7 +202,7 @@ pub fn find_updates_by_id_and_ownership(
         .filter(id.ge(update_id))
         .filter(ownership.eq(ownership_passed_in))
         .select(Updates::as_returning())
-        .get_results(&mut establish_connection());
+        .get_results::<Updates>(&mut establish_connection());
 
     if get_updates_based_on_ids_and_ownership.is_err() {
         let err_msg = get_updates_based_on_ids_and_ownership.err().unwrap().to_string();

@@ -42,6 +42,7 @@ type RustResult<T, E> = std::result::Result<T, E>;
 
 /*
  * Written by Daniel Kaplan
+ * Basic rwrwerewr rwerwer
  * Simple: Registers a new user to the database
  * Pipeline from header element to username and password:
  * Header Elements { ..., Authentication: <base64 encoded string>, ... } ->

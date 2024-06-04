@@ -25,7 +25,6 @@ pub struct Updates {
 #[diesel(table_name = updates)]
 #[diesel(primary_key(id))]
 pub struct NewUpdates {
-    pub id: Uuid,
     pub owner_id: Uuid,
     pub ownership: Ownership,
     pub update_value: String,

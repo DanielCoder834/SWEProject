@@ -94,7 +94,8 @@ pub fn insert_sheet_elem(sheet_column_identifier: String,
 /// ```
 /// let new_sheet_elem: NewSheetElem = decoded_sheet(&payload);
 /// let num_of_rows_updated = update_sheet_elem(
-/// &new_sheet_elem, &arguement.publisher_name, &arguement.sheet_name, arguement.payload, Ownership::publisher);
+/// &new_sheet_elem, &arguement.publisher_name, &arguement.sheet_name, arguement.payload,
+/// Ownership::publisher);
 /// println!(format!("{num_of_rows_updated.unwrap()} were affect"));
 /// ```
 pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
@@ -139,8 +140,7 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
     };
 
     let new_update = NewUpdates {
-        id: Uuid::new_v4(),
-        owner_id: Uuid::new_v4(),
+        owner_id: publisher.id,
         ownership,
         update_value: payload,
     };
@@ -153,13 +153,16 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
 
     if insert_update_rest.is_err() {
         let err_msg = insert_update_rest.err().unwrap().to_string();
-        return Err(Result::error(format!("Error in asserting payload in update table. Error: {err_msg}"), vec![]));
+        return Err(Result::error(format!("Error in asserting payload in update table. Error: {err_msg}"),
+                                 vec![]));
     }
 
     Ok(sheet_effected_count)
 }
 
-// pub fn same
+pub fn find_updates_by_id_and_ownership(id: i32, ownership: Ownership) -> RustResults<(), Result> {
+    Ok(())
+}
 
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
                                   new_sheet_elemt: &NewSheetElem,

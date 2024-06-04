@@ -41,7 +41,7 @@ diesel::table! {
     use crate::updates::OwnershipType;
 
     updates (id) {
-        id -> Uuid,
+        id -> Serial,
         owner_id -> Uuid,
         #[max_length = 1000]
         update_value -> Varchar,

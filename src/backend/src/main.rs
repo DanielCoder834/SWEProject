@@ -4,7 +4,6 @@ use actix_web::{
 };
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use std::sync::Mutex;
 
 // Our File Modules
 pub mod server_request;
@@ -13,12 +12,11 @@ mod publisher;
 mod results;
 mod schema;
 mod sheet;
+mod updates;
 
 // Our File Functions/Structs
-use database::DataStructure;
-// use libs::database::DatabaseManager;
-use server_request::{ping, register, createSheet, deleteSheet, getSheets};
-use crate::database::password_and_username_in_db;
+use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
+use database::password_and_username_in_db;
 
 async fn do_auth(
     req: ServiceRequest,
@@ -51,7 +49,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(HttpAuthentication::basic(do_auth))
             .service(createSheet)
             .service(getSheets)
-            .service(deleteSheet);
+            .service(deleteSheet)
+            .service(getPublishers);
         App::new()
             .service(register)
             .service(ping)

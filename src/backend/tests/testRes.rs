@@ -16,6 +16,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_request_get() {
+        // TODO: add more boilerplate functions
         let db_wrapped: web::Data<Mutex<DataStructure>> = actix_web::web::Data::new(Mutex::new(DataStructure::default()));
         // let db = db_wrapped.lock().unwrap().storage;
         let app = test::init_service(

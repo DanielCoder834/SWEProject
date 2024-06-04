@@ -1,4 +1,5 @@
 use diesel::{Identifiable, Insertable, Queryable, Selectable};
+use uuid::Uuid;
 
 #[derive(PartialEq, Eq, Debug, serde::Deserialize, Clone, Hash)]
 pub struct Sheet {
@@ -80,8 +81,7 @@ impl Sheet {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct Test_Sheet {
-    pub(crate) id: i32,
-    sheet_elem_id: i32,
+    pub(crate) id: Uuid,
     pub title: String,
 }
 
@@ -89,8 +89,7 @@ pub struct Test_Sheet {
 #[diesel(table_name = crate::schema::sheets)]
 #[diesel(primary_key(id))]
 pub struct New_Test_Sheet {
-    pub(crate) id: i32,
-    pub(crate) sheet_elem_id: i32,
+    pub(crate) id: Uuid,
     pub(crate) title: String,
 }
 
@@ -99,20 +98,20 @@ pub struct New_Test_Sheet {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 pub struct SheetElem {
-    pub id: i32,
+    pub id: Uuid,
     sheet_value: String,
     sheet_column_identifier: String,
     sheet_row: i32,
-    sheet_id: i32,
+    sheet_id: Uuid,
 }
 
 impl SheetElem {
     pub fn new(
-        id: i32,
+        id: Uuid,
         sheet_column_identifier: String,
         sheet_row: i32,
         sheet_value: String,
-        sheet_id: i32) -> Self {
+        sheet_id: Uuid) -> Self {
         Self {
             id,
             sheet_column_identifier,
@@ -124,11 +123,11 @@ impl SheetElem {
     
     pub fn default() -> Self {
         Self {
-            id: 0,
+            id: Uuid::new_v4(),
             sheet_column_identifier: "A".to_string(),
             sheet_row: 0,
             sheet_value: "".to_string(),
-            sheet_id: 0,
+            sheet_id: Uuid::new_v4(),
         }
     }
 }
@@ -137,21 +136,21 @@ impl SheetElem {
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(primary_key(id))]
 pub struct NewSheetElem {
-    pub id: i32,
+    pub id: Uuid,
     pub sheet_column_identifier: String,
     pub sheet_row: i32,
     pub sheet_value: String,
-    pub sheet_id: i32,
+    pub sheet_id: Uuid,
 }
 
 impl NewSheetElem {
     pub fn default() -> Self {
         Self {
-            id: 0,
+            id: Uuid::new_v4(),
             sheet_column_identifier: "A".to_string(),
             sheet_row: 0,
             sheet_value: "".to_string(),
-            sheet_id: 0,
+            sheet_id: Uuid::new_v4(),
         }
     }
 }

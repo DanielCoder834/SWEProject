@@ -1,15 +1,14 @@
 // @generated automatically by Diesel CLI.
-
 diesel::table! {
     publisher_sheets (sheets_id, publisher_id) {
-        sheets_id -> Int4,
-        publisher_id -> Int4,
+        sheets_id -> Uuid,
+        publisher_id -> Uuid,
     }
 }
 
 diesel::table! {
     publishers (id) {
-        id -> Int4,
+        id -> Uuid,
         #[max_length = 100]
         username -> Varchar,
         #[max_length = 100]
@@ -19,31 +18,45 @@ diesel::table! {
 
 diesel::table! {
     sheet_elems (id) {
-        id -> Int4,
+        id -> Uuid,
         #[max_length = 100]
         sheet_column_identifier -> Varchar,
         sheet_row -> Int4,
         #[max_length = 100]
         sheet_value -> Varchar,
-        sheet_id -> Int4,
+        sheet_id -> Uuid,
     }
 }
 
 diesel::table! {
     sheets (id) {
-        id -> Int4,
-        sheet_elem_id -> Int4,
+        id -> Uuid,
         #[max_length = 100]
         title -> Varchar,
     }
 }
 
+diesel::table! {
+    use diesel::sql_types::*;
+    use crate::updates::OwnershipType;
+
+    updates (id) {
+        id -> Serial,
+        owner_id -> Uuid,
+        #[max_length = 1000]
+        update_value -> Varchar,
+        ownership -> OwnershipType,
+    }
+}
+
 diesel::joinable!(publisher_sheets -> publishers (publisher_id));
 diesel::joinable!(publisher_sheets -> sheets (sheets_id));
+diesel::joinable!(sheet_elems -> sheets (sheet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     publisher_sheets,
     publishers,
     sheet_elems,
     sheets,
+    updates,
 );

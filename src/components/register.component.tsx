@@ -9,7 +9,6 @@ type Props = {};
 
 type State = {
   username: string;
-  email: string;
   password: string;
   successful: boolean;
   message: string;
@@ -22,7 +21,6 @@ export default class Register extends Component<Props, State> {
 
     this.state = {
       username: "",
-      email: "",
       password: "",
       successful: false,
       message: "",
@@ -39,9 +37,6 @@ export default class Register extends Component<Props, State> {
             val && val.toString().length >= 3 && val.toString().length <= 20
         )
         .required("This field is required!"),
-      email: Yup.string()
-        .email("This is not a valid email.")
-        .required("This field is required!"),
       password: Yup.string()
         .test(
           "len",
@@ -55,17 +50,16 @@ export default class Register extends Component<Props, State> {
 
   handleRegister(formValue: {
     username: string;
-    email: string;
     password: string;
   }) {
-    const { username, email, password } = formValue;
+    const { username, password } = formValue;
 
     this.setState({
       message: "",
       successful: false,
     });
 
-    AuthService.register(username, email, password).then(
+    AuthService.register(username, password).then(
       (response) => {
         this.setState({
           message: response.data.message,
@@ -93,7 +87,6 @@ export default class Register extends Component<Props, State> {
 
     const initialValues = {
       username: "",
-      email: "",
       password: "",
     };
 
@@ -123,16 +116,6 @@ export default class Register extends Component<Props, State> {
                     />
                     <ErrorMessage
                       name="username"
-                      component="div"
-                      className="alert alert-danger"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="email"> Email </label>
-                    <Field name="email" type="email" className="form-control" />
-                    <ErrorMessage
-                      name="email"
                       component="div"
                       className="alert alert-danger"
                     />

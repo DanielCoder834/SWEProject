@@ -160,8 +160,56 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
     Ok(sheet_effected_count)
 }
 
-pub fn find_updates_by_id_and_ownership(id: i32, ownership: Ownership) -> RustResults<(), Result> {
-    Ok(())
+///
+///
+/// # Arguments
+///
+/// * `update_id`: The id of the update being sent by the argument object
+/// * `ownership_passed_in`: ownership type of the file
+/// * `publisher_name`: Name of the publisher passed in by the argument object
+/// * `sheet_name`: Name of the sheet passed in by the argument object
+///
+/// returns: Result<Vec<Updates, Global>, Result>
+/// On success it returns all the updates fitting the parameters
+///
+/// # Examples
+///
+/// ```
+/// let list_of_updates = find_updates_by_id_and_ownership(arguement.id,
+/// Ownership::Publisher, &arguement.publisher, &arguement.sheet);
+/// Error handle the response from find_updates_by_id_and_ownership
+/// ```
+pub fn find_updates_by_id_and_ownership(
+    update_id: i32,
+    ownership_passed_in: Ownership,
+    publisher_name: &String,
+    sheet_name: &String) -> RustResults<Vec<Updates>, Result> {
+    use crate::schema::updates::dsl::{updates, owner_id, id, ownership};
+    let publisher_of_sheet = get_password_of_username(publisher_name);
+    let publisher = if publisher_of_sheet.is_err() {
+        return Err(publisher_of_sheet.err().unwrap());
+    } else {
+        publisher_of_sheet.unwrap()
+    };
+    let matching_sheet_name_owned_by_publisher =
+        matching_publisher_and_sheet_name(sheet_name, &publisher);
+
+    let sheet_ids_of_matching_publishers_and_sheets =
+        matching_sheet_name_owned_by_publisher.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
+
+    let get_updates_based_on_ids_and_ownership = updates
+        .filter(owner_id.eq_any(sheet_ids_of_matching_publishers_and_sheets))
+        .filter(id.ge(update_id))
+        .filter(ownership.eq(ownership_passed_in))
+        .select(Updates::as_returning())
+        .get_results(&mut establish_connection());
+
+    if get_updates_based_on_ids_and_ownership.is_err() {
+        let err_msg = get_updates_based_on_ids_and_ownership.err().unwrap().to_string();
+        return Err(Result::error(format!("Issue with getting updates. Error: {err_msg}"),
+        vec![]))
+    }
+    Ok(get_updates_based_on_ids_and_ownership.unwrap())
 }
 
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,

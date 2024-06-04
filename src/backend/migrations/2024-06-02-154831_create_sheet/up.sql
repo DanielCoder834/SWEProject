@@ -1,0 +1,5 @@
+CREATE TABLE sheets (
+    id  INTEGER PRIMARY KEY NOT NULL,
+    sheet_elem_id INTEGER NOT NULL,
+    title   VARCHAR(100) NOT NULL
+)

@@ -1,6 +1,8 @@
 import { Component } from "react";
 
 import UserService from "../services/user.service";
+import Spreadsheets from './spreadsheets';
+import TopMenu from './topmenu';
 
 type Props = {};
 
@@ -38,6 +40,8 @@ export default class Home extends Component<Props, State> {
   render() {
     return (
       <div className="container">
+        <TopMenu />
+        <Spreadsheets />
         <header className="jumbotron">
           <h3>{this.state.content}</h3>
         </header>

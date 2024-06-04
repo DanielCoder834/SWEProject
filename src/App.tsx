@@ -70,7 +70,7 @@ class App extends Component<Props, State> {
       <div>
         <nav className="navbar navbar-expand navbar-dark bg-dark">
           <Link to={"/"} className="navbar-brand">
-            bezKoder
+            Husksheets
           </Link>
           <div className="navbar-nav mr-auto">
             <li className="nav-item">
@@ -136,7 +136,7 @@ class App extends Component<Props, State> {
 
         <div className="container mt-3">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Login />} />
             <Route path="/home" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

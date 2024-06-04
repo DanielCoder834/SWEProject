@@ -30,3 +30,23 @@ label {
   -webkit-border-radius: 50%;
   border-radius: 50%;
 }
+
+.top-menu ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  width: 100px;
+}
+
+.top-menu li {
+  padding: 8px;
+  margin-bottom: 1px;
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+.top-menu li:hover {
+  background-color: #ddd;
+}

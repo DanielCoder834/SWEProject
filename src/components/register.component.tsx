@@ -1,17 +1,17 @@
 import { Component } from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import React from 'react';
 
 import AuthService from "../services/auth.service";
 
 type Props = {};
 
 type State = {
-  username: string,
-  email: string,
-  password: string,
-  successful: boolean,
-  message: string
+  username: string;
+  password: string;
+  successful: boolean;
+  message: string;
 };
 
 export default class Register extends Component<Props, State> {
@@ -21,10 +21,9 @@ export default class Register extends Component<Props, State> {
 
     this.state = {
       username: "",
-      email: "",
       password: "",
       successful: false,
-      message: ""
+      message: "",
     };
   }
 
@@ -35,47 +34,39 @@ export default class Register extends Component<Props, State> {
           "len",
           "The username must be between 3 and 20 characters.",
           (val: any) =>
-            val &&
-            val.toString().length >= 3 &&
-            val.toString().length <= 20
+            val && val.toString().length >= 3 && val.toString().length <= 20
         )
-        .required("This field is required!"),
-      email: Yup.string()
-        .email("This is not a valid email.")
         .required("This field is required!"),
       password: Yup.string()
         .test(
           "len",
           "The password must be between 6 and 40 characters.",
           (val: any) =>
-            val &&
-            val.toString().length >= 6 &&
-            val.toString().length <= 40
+            val && val.toString().length >= 6 && val.toString().length <= 40
         )
         .required("This field is required!"),
     });
   }
 
-  handleRegister(formValue: { username: string; email: string; password: string }) {
-    const { username, email, password } = formValue;
+  handleRegister(formValue: {
+    username: string;
+    password: string;
+  }) {
+    const { username, password } = formValue;
 
     this.setState({
       message: "",
-      successful: false
+      successful: false,
     });
 
-    AuthService.register(
-      username,
-      email,
-      password
-    ).then(
-      response => {
+    AuthService.register(username, password).then(
+      (response) => {
         this.setState({
           message: response.data.message,
-          successful: true
+          successful: true,
         });
       },
-      error => {
+      (error) => {
         const resMessage =
           (error.response &&
             error.response.data &&
@@ -85,7 +76,7 @@ export default class Register extends Component<Props, State> {
 
         this.setState({
           successful: false,
-          message: resMessage
+          message: resMessage,
         });
       }
     );
@@ -96,7 +87,6 @@ export default class Register extends Component<Props, State> {
 
     const initialValues = {
       username: "",
-      email: "",
       password: "",
     };
 
@@ -119,19 +109,13 @@ export default class Register extends Component<Props, State> {
                 <div>
                   <div className="form-group">
                     <label htmlFor="username"> Username </label>
-                    <Field name="username" type="text" className="form-control" />
+                    <Field
+                      name="username"
+                      type="text"
+                      className="form-control"
+                    />
                     <ErrorMessage
                       name="username"
-                      component="div"
-                      className="alert alert-danger"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="email"> Email </label>
-                    <Field name="email" type="email" className="form-control" />
-                    <ErrorMessage
-                      name="email"
                       component="div"
                       className="alert alert-danger"
                     />
@@ -152,7 +136,9 @@ export default class Register extends Component<Props, State> {
                   </div>
 
                   <div className="form-group">
-                    <button type="submit" className="btn btn-primary btn-block">Sign Up</button>
+                    <button type="submit" className="btn btn-primary btn-block">
+                      Sign Up
+                    </button>
                   </div>
                 </div>
               )}

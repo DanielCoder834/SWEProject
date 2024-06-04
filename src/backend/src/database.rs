@@ -15,10 +15,12 @@ use crate::{results, schema};
 use crate::publisher::*;
 use crate::publisher::Publisher;
 // use crate::schema::sheets;
-use crate::schema::{publisher_sheets, sheets};
+use crate::schema::{publisher_sheets, sheets, updates};
 use crate::schema::publishers::dsl::publishers;
+use crate::schema::sheet_elems::dsl::sheet_elems;
 use crate::schema::sheets::{title};
 use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
+use crate::updates::{NewUpdates, Ownership, Updates};
 
 // Type Aliasing
 type Result = results::Result;
@@ -74,6 +76,91 @@ pub fn insert_sheet_elem(sheet_column_identifier: String,
         .get_result(conn)
 }
 
+///
+///
+/// # Arguments
+///
+/// * `new_sheet_elem`: The element to identify which sheet elements to updaate along with the value to update them with
+/// * `publisher_name`: The value to identify the owner of the sheet
+/// * `sheet_name`: The value to identify which sheet to do the updates on
+/// * `payload`: The update value stored in the database
+/// * `ownership`: An enum representing either a subscriber or a publisher
+///
+/// returns: Result<usize, Result>
+/// The usize is the number of values updated, and the Result is for when there is an issue with the function
+///
+/// # Examples
+///
+/// ```
+/// let new_sheet_elem: NewSheetElem = decoded_sheet(&payload);
+/// let num_of_rows_updated = update_sheet_elem(
+/// &new_sheet_elem, &arguement.publisher_name, &arguement.sheet_name, arguement.payload, Ownership::publisher);
+/// println!(format!("{num_of_rows_updated.unwrap()} were affect"));
+/// ```
+pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
+                         publisher_name: &String,
+                         sheet_name: &String,
+                         payload: String,
+                         ownership: Ownership)
+                         -> RustResults<usize, Result> {
+    use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id, sheet_value};
+    use crate::schema::{sheet_elems, updates};
+    let publisher_of_sheet = get_password_of_username(publisher_name);
+    let publisher = if publisher_of_sheet.is_err() {
+        return Err(publisher_of_sheet.err().unwrap());
+    } else {
+        publisher_of_sheet.unwrap()
+    };
+    let matching_sheet_name_owned_by_publisher =
+        matching_publisher_and_sheet_name(sheet_name, &publisher);
+
+    let sheet_ids_of_matching_publishers_and_sheets =
+        matching_sheet_name_owned_by_publisher.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
+
+    let new_sheet_col = &new_sheet_elem.sheet_column_identifier;
+    let new_sheet_row = &new_sheet_elem.sheet_row;
+    let new_sheet_value = &new_sheet_elem.sheet_value;
+
+    let sheet_elements_to_update: QueryResult<Vec<SheetElem>> = diesel::update(
+        sheet_elems::table
+            .filter(sheet_column_identifier.eq(new_sheet_col))
+            .filter(sheet_row.eq(new_sheet_row))
+            .filter(sheet_id.eq_any(sheet_ids_of_matching_publishers_and_sheets)))
+        .set(sheet_value.eq(new_sheet_value))
+        .returning(SheetElem::as_returning())
+        .get_results(&mut establish_connection());
+
+    let sheet_effected_count = if sheet_elements_to_update.is_err() {
+        let err_msg = sheet_elements_to_update.err().unwrap().to_string();
+        return Err(Result::error(format!("Error on updating new sheet elements. Error: {err_msg}"),
+                                 vec![]));
+    } else {
+        sheet_elements_to_update.unwrap().len()
+    };
+
+    let new_update = NewUpdates {
+        id: Uuid::new_v4(),
+        owner_id: Uuid::new_v4(),
+        ownership,
+        update_value: payload,
+    };
+
+    let insert_update_rest =
+        diesel::insert_into(updates::table)
+            .values(&new_update)
+            .returning(Updates::as_returning())
+            .get_result(&mut establish_connection());
+
+    if insert_update_rest.is_err() {
+        let err_msg = insert_update_rest.err().unwrap().to_string();
+        return Err(Result::error(format!("Error in asserting payload in update table. Error: {err_msg}"), vec![]));
+    }
+
+    Ok(sheet_effected_count)
+}
+
+// pub fn same
+
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
                                   new_sheet_elemt: &NewSheetElem,
                                   publisher: &Publisher) -> RustResults<(), String> {
@@ -122,12 +209,21 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
     Ok(())
 }
 
-// pub fn delete_sheet()
 
 pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
     use crate::schema::{sheets};
     PublisherSheet::belonging_to(publisher)
         .inner_join(sheets::table)
+        .select(Test_Sheet::as_select())
+        .load(&mut establish_connection())
+        .expect("Oops")
+}
+
+pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publisher)
+                                         -> Vec<Test_Sheet> {
+    PublisherSheet::belonging_to(publisher)
+        .inner_join(sheets::table)
+        .filter(title.eq(sheet_title))
         .select(Test_Sheet::as_select())
         .load(&mut establish_connection())
         .expect("Oops")
@@ -143,12 +239,7 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         publisher.unwrap()
     };
 
-    let sheets_to_delete: Vec<Test_Sheet> = PublisherSheet::belonging_to(&publisher_no_err)
-        .inner_join(sheets::table)
-        .filter(title.eq(sheet_title))
-        .select(Test_Sheet::as_select())
-        .load(&mut establish_connection())
-        .expect("Oops");
+    let sheets_to_delete: Vec<Test_Sheet> = matching_publisher_and_sheet_name(sheet_title, &publisher_no_err);
 
     let sheet_ids_to_delete: &Vec<Uuid> =
         &sheets_to_delete.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();

@@ -4,7 +4,7 @@
 [print_schema]
 file = "src/schema.rs"
 custom_type_derives = ["diesel::query_builder::QueryId"]
-#import_types = ["diesel::sql_types::*", "crate::updates::exports::*"]
+import_types = ["diesel::sql_types::*", "crate::updates::exports::*"]
 
 
 [migrations_directory]

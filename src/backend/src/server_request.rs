@@ -171,7 +171,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
     // Initial Sheet Element
     let initial_sheet_element: NewSheetElem = if payload.len() != 0 {
-        let result_decoding_sheet = decoded_sheet(payload, sheet_title);
+        let result_decoding_sheet = decoded_sheet(payload);
         let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
             result_decoding_sheet.unwrap()
         } else {
@@ -264,6 +264,13 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
+#[post("api/v1/updatePublished")]
+async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
+    return web::Json("ya")
+}
+
+// #[post("api/v1/updateSubscription")]
+
 // #[get("/api/vi/getUpdatesForSubscription")]
 // async fn getUpdatesForSubscription(req_body: Argument) {}
 
@@ -280,7 +287,9 @@ pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
 }
 
-fn decoded_sheet(encoded_sheet: &String, sheet_title: &String) -> RustResult<NewSheetElem, String> {
+// TODO: Make the decoding possible for multiple entries in a payload
+// Recommend using .split("$"), possibly making a small function for a single payload, and then map -> collect<NewSheetElem>
+fn decoded_sheet(encoded_sheet: &String) -> RustResult<NewSheetElem, String> {
     if (*encoded_sheet).chars().nth(0).expect("parsing issue").to_string() != "$" {
         return Err("Incorrect Sheet Meta String Length or no $".to_string());
     }

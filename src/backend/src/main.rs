@@ -16,7 +16,7 @@ mod updates;
 
 // Our File Functions/Structs
 use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
-use crate::database::password_and_username_in_db;
+use database::password_and_username_in_db;
 
 async fn do_auth(
     req: ServiceRequest,

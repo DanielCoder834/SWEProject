@@ -1,5 +1,4 @@
 // @generated automatically by Diesel CLI.
-
 diesel::table! {
     publisher_sheets (sheets_id, publisher_id) {
         sheets_id -> Uuid,
@@ -37,24 +36,27 @@ diesel::table! {
     }
 }
 
-// diesel::table! {
-//     updates (id) {
-//         id -> Int4,
-//         owner_id -> Int4,
-//         #[max_length = 1000]
-//         update_value -> Varchar,
-//         ownership -> crate::updates::Ownership,
-//     }
-// }
+diesel::table! {
+    use diesel::sql_types::*;
+    use crate::updates::OwnershipType;
 
-// One to Many Relation from user to updates
+    updates (id) {
+        id -> Uuid,
+        owner_id -> Uuid,
+        #[max_length = 1000]
+        update_value -> Varchar,
+        ownership -> OwnershipType,
+    }
+}
 
 diesel::joinable!(publisher_sheets -> publishers (publisher_id));
 diesel::joinable!(publisher_sheets -> sheets (sheets_id));
+diesel::joinable!(sheet_elems -> sheets (sheet_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
     publisher_sheets,
     publishers,
     sheet_elems,
     sheets,
+    updates,
 );

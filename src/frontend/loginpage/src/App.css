@@ -50,3 +50,15 @@ label {
 .top-menu li:hover {
   background-color: #ddd;
 }
+
+.spreadsheet .row {
+  display: flex;
+}
+
+.cell-input {
+  border: 1px solid #ccc;
+  padding: 8px;
+  margin: 2px;
+  width: 100px;  /* Adjust the width as needed */
+  height: 20px;  /* Adjust the height as needed */
+}

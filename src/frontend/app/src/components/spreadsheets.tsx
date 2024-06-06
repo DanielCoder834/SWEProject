@@ -19,7 +19,7 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({ dimensions }) => {
   }, [rows, columns]);
 
   return (
-    <div className="spreadsheet">
+    <div className="spreadsheet-container">
       {gridData.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((cellData, colIndex) => (

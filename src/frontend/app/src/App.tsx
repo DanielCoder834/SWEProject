@@ -36,7 +36,7 @@ class App extends Component<Props, State> {
       showAdminBoard: false,
       currentUser: undefined,
       dimensions: { rows: 10, columns: 20 },  // Default dimensions
-      title: "Untitled"  // Default title
+      title: "Untitled"
     };
   }
 
@@ -70,7 +70,7 @@ class App extends Component<Props, State> {
   handleCreateSpreadsheet = (rows: number, columns: number, title: string) => {
     this.setState({
       dimensions: { rows, columns },
-      title: title
+      title
     });
   };
 
@@ -83,6 +83,13 @@ class App extends Component<Props, State> {
           <Link to={"/"} className="navbar-brand">
             Husksheets
           </Link>
+          <div className="navbar-nav mr-auto">
+            <li className="nav-item">
+              <Link to={"/home"} className="nav-link">
+                Home
+              </Link>
+            </li>
+          </div>
           <div className="navbar-nav ml-auto">
             {currentUser ? (
               <>
@@ -117,7 +124,7 @@ class App extends Component<Props, State> {
         <div className="container mt-3">
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/home" element={<Home dimensions={dimensions} onCreateSpreadsheet={this.handleCreateSpreadsheet} />} />
+            <Route path="/home" element={<Home dimensions={dimensions} title={title} onCreateSpreadsheet={this.handleCreateSpreadsheet} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />

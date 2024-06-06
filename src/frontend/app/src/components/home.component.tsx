@@ -1,21 +1,25 @@
 import { Component } from "react";
-
 import UserService from "../services/user.service";
-import Spreadsheets from './spreadsheets';
+import Spreadsheet from './spreadsheets';
 import TopMenu from './topmenu';
 
-type Props = {};
+type Props = {
+  dimensions: { rows: number; columns: number };
+  onCreateSpreadsheet: (rows: number, columns: number, title: string) => void;
+};
 
 type State = {
   content: string;
-}
+  title: string;
+};
 
 export default class Home extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
     this.state = {
-      content: ""
+      content: "",
+      title: "Untitled"
     };
   }
 
@@ -37,11 +41,21 @@ export default class Home extends Component<Props, State> {
     );
   }
 
+  handleCreateSpreadsheet = (rows: number, columns: number, title: string) => {
+    this.setState({
+      title: title,
+    });
+    this.props.onCreateSpreadsheet(rows, columns, title);
+  };
+
   render() {
+    const { dimensions } = this.props;
+    const { title } = this.state;
+
     return (
       <div className="container">
-        <TopMenu />
-        <Spreadsheets />
+        <TopMenu onCreateSpreadsheet={this.handleCreateSpreadsheet} title={title} />
+        <Spreadsheet dimensions={dimensions} />
         <header className="jumbotron">
           <h3>{this.state.content}</h3>
         </header>

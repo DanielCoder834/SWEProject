@@ -1,4 +1,4 @@
-import { Component } from "react";
+import React, { Component } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
@@ -21,7 +21,9 @@ type Props = {};
 type State = {
   showModeratorBoard: boolean,
   showAdminBoard: boolean,
-  currentUser: IUser | undefined
+  currentUser: IUser | undefined,
+  dimensions: { rows: number, columns: number },
+  title: string
 }
 
 class App extends Component<Props, State> {
@@ -33,6 +35,8 @@ class App extends Component<Props, State> {
       showModeratorBoard: false,
       showAdminBoard: false,
       currentUser: undefined,
+      dimensions: { rows: 10, columns: 20 },  // Default dimensions
+      title: "Untitled"  // Default title
     };
   }
 
@@ -63,8 +67,15 @@ class App extends Component<Props, State> {
     });
   }
 
+  handleCreateSpreadsheet = (rows: number, columns: number, title: string) => {
+    this.setState({
+      dimensions: { rows, columns },
+      title: title
+    });
+  };
+
   render() {
-    const { currentUser, showModeratorBoard, showAdminBoard } = this.state;
+    const { currentUser, showModeratorBoard, showAdminBoard, dimensions, title } = this.state;
 
     return (
       <div>
@@ -72,72 +83,41 @@ class App extends Component<Props, State> {
           <Link to={"/"} className="navbar-brand">
             Husksheets
           </Link>
-          <div className="navbar-nav mr-auto">
-            <li className="nav-item">
-              <Link to={"/home"} className="nav-link">
-                Home
-              </Link>
-            </li>
-
-            {showModeratorBoard && (
-              <li className="nav-item">
-                <Link to={"/mod"} className="nav-link">
-                  Moderator Board
-                </Link>
-              </li>
-            )}
-
-            {showAdminBoard && (
-              <li className="nav-item">
-                <Link to={"/admin"} className="nav-link">
-                  Admin Board
-                </Link>
-              </li>
-            )}
-
-            {currentUser && (
-              <li className="nav-item">
-                <Link to={"/user"} className="nav-link">
-                  User
-                </Link>
-              </li>
+          <div className="navbar-nav ml-auto">
+            {currentUser ? (
+              <>
+                <li className="nav-item">
+                  <Link to={"/profile"} className="nav-link">
+                    {currentUser.username}
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <a href="/login" className="nav-link" onClick={this.logOut}>
+                    LogOut
+                  </a>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <Link to={"/login"} className="nav-link">
+                    Login
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link to={"/register"} className="nav-link">
+                    Sign Up
+                  </Link>
+                </li>
+              </>
             )}
           </div>
-
-          {currentUser ? (
-            <div className="navbar-nav ml-auto">
-              <li className="nav-item">
-                <Link to={"/profile"} className="nav-link">
-                  {currentUser.username}
-                </Link>
-              </li>
-              <li className="nav-item">
-                <a href="/login" className="nav-link" onClick={this.logOut}>
-                  LogOut
-                </a>
-              </li>
-            </div>
-          ) : (
-            <div className="navbar-nav ml-auto">
-              <li className="nav-item">
-                <Link to={"/login"} className="nav-link">
-                  Login
-                </Link>
-              </li>
-
-              <li className="nav-item">
-                <Link to={"/register"} className="nav-link">
-                  Sign Up
-                </Link>
-              </li>
-            </div>
-          )}
         </nav>
 
         <div className="container mt-3">
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route path="/home" element={<Home />} />
+            <Route path="/home" element={<Home dimensions={dimensions} onCreateSpreadsheet={this.handleCreateSpreadsheet} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
@@ -146,8 +126,6 @@ class App extends Component<Props, State> {
             <Route path="/admin" element={<BoardAdmin />} />
           </Routes>
         </div>
-
-        { /*<AuthVerify logOut={this.logOut}/> */}
       </div>
     );
   }

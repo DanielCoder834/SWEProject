@@ -36,7 +36,7 @@ impl Result {
 pub struct Argument {
     pub publisher: String,
     pub sheet: String,
-    id: String,
+    pub id: String,
     pub payload: String,
 }
 

@@ -80,12 +80,12 @@ pub fn insert_sheet_elem(sheet_column_identifier: String,
 ///
 /// # Arguments
 ///
-/// * `new_sheet_elem`: The element to identify which sheet elements to updaate along with the value to update them with
+/// * `new_sheet_elem`: The element to identify which sheet elements to update along with the value to update them with
 /// * `publisher_name`: The value to identify the owner of the sheet
 /// * `sheet_name`: The value to identify which sheet to do the updates on
 /// * `payload`: The update value stored in the database
 /// * `ownership`: An enum representing either a subscriber or a publisher
-///
+//
 /// returns: Result<usize, Result>
 /// The usize is the number of values updated, and the Result is for when there is an issue with the function
 ///

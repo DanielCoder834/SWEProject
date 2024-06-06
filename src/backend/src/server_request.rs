@@ -28,7 +28,8 @@ use crate::database::{delete_sheet_by_sheet_name_and_user,
                       insert_sheet_relation_elem,
                       password_and_username_in_db,
                       get_sheets_by_a_publisher,
-                      get_all_publishers};
+                      get_all_publishers,
+                    update_sheet_elem};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
@@ -42,7 +43,6 @@ type RustResult<T, E> = std::result::Result<T, E>;
 
 /*
  * Written by Daniel Kaplan
- * Basic rwrwerewr rwerwer
  * Simple: Registers a new user to the database
  * Pipeline from header element to username and password:
  * Header Elements { ..., Authentication: <base64 encoded string>, ... } ->
@@ -265,23 +265,117 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
+// Written by Brooklyn Schmidt
+// Gets the provided argument's sheet and publisher
+// Decodes the payload into a new sheet element
+// Updates the sheet with the decoded payload
 #[post("api/v1/updatePublished")]
 async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
-    return web::Json("ya")
+    let publisher_name: &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
+
+    let new_sheet_elem = decoded_sheet(&argument.payload);
+    if new_sheet_elem.is_err() {
+        return web::Json(Result::new(
+            true,
+            "Failed to update sheet".to_string(),
+            vec![]
+        ));
+    }
+    let unwrapped_new_sheet_elem = new_sheet_elem.unwrap();
+    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.payload, Ownership::Publisher);
+
+    let successful_result : Result = Result::new(
+        true,
+        (format!("{num_of_rows_updated.unwrap()} were affected")),
+        vec![]
+    );
+
+    web::Json(successful_result)
 }
 
-// #[post("api/v1/updateSubscription")]
+// Written by Brooklyn Schmidt
+// Retrieves list of updates for subscribers from database
+// Error handles
+// Returns argument object
+#[get("/api/vi/getUpdatesForSubscription")]
+async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
+    let publisher_name : &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
 
-// #[get("/api/vi/getUpdatesForSubscription")]
-// async fn getUpdatesForSubscription(req_body: Argument) {}
+    let list_of_updates = find_updates_by_id_and_ownership(argument.id,
+    Ownership::Subscriber, publisher_name, sheet_name); 
 
-// #[get("/api/vi/getUpdatesForPublished")]
-// async fn getUpdatesForPublished(req_body: Argument) {}
+    if list_of_updates.is_err() {
+        return web::Json(Result::error("Failed to send updates".to_string(), vec![]));
+    }
+    let successful_argument : Argument = Argument::new(
+        publisher_name.to_string(),
+        sheet_name.to_string(), 
+        argument.id, // needs to be last taken ID
+        list_of_updates.unwrap() // map everything to Argument
+    );
 
-// #[post("/api/vi/updatePublished")]
-// async fn updatePublished(req_body: Argument) {}
-// #[post("/api/vi/updateSubscription")]
-// async fn updateSubscription(req_body: Argument) {}
+    web::Json(successful_argument)
+
+}
+
+// Written by Brooklyn Schmidt
+// Retrieves list of updates for publisher from database
+// Error handles
+// Returns argument object
+#[get("/api/vi/getUpdatesForPublished")]
+async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
+    let publisher_name : &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
+
+    let list_of_updates = find_updates_by_id_and_ownership(&argument.id,
+    Ownership::Publisher, publisher_name, sheet_name); 
+
+    if list_of_updates.is_err() {
+        return web::Json(Result::error("Failed to send updates".to_string(), vec![]));
+    }
+
+    let successful_argument : Argument = Argument::new(
+        publisher_name.to_string(),
+        sheet_name.to_string(),
+        argument.id, // get last update 
+        list_of_updates // make to string
+    );
+
+    web::Json(successful_argument)
+}
+
+// Written by Brooklyn Schmidt
+// Gets the provided argument's sheet and publisher
+// Decodes the payload into a new sheet element
+// Updates the sheet with the decoded payload
+#[post("/api/vi/updateSubscription")]
+async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
+    let publisher_name: &String = &argument.publisher;
+    let sheet_name: &String = &argument.sheet;
+
+    let new_sheet_elem = decoded_sheet(&argument.payload);
+    if new_sheet_elem.is_err() {
+        return web::Json(Result::new(
+            true,
+            "Failed to update sheet".to_string(),
+            vec![]
+        ));
+    }
+
+    let unwrapped_new_sheet_elem: NewSheetElem = new_sheet_elem.unwrap();
+
+    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.payload, Ownership::Subscriber);
+
+    let successful_result : Result = Result::new(
+        true,
+        (format!("{num_of_rows_updated.unwrap()} were affected")),
+        vec![]
+    );
+
+    web::Json(successful_result)
+}
 
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {

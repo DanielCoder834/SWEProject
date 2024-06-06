@@ -19,7 +19,7 @@ pub struct Updates {
     id: i32,
     owner_id: Uuid,
     ownership: Ownership,
-    update_value: String,
+    pub update_value: String,
 }
 
 #[derive(Insertable)]

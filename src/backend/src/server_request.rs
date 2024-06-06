@@ -22,18 +22,12 @@ use uuid::Uuid;
 
 // Our files/structs
 use crate::database;
-use crate::database::{delete_sheet_by_sheet_name_and_user,
-                      get_password_of_username,
-                      insert_new_credentials,
-                      insert_sheet_relation_elem,
-                      password_and_username_in_db,
-                      get_sheets_by_a_publisher,
-                      get_all_publishers,
-                    update_sheet_elem};
+use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
+use crate::updates::{Ownership, Updates};
 
 // Modules
 
@@ -283,11 +277,12 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
         ));
     }
     let unwrapped_new_sheet_elem = new_sheet_elem.unwrap();
-    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.payload, Ownership::Publisher);
+    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.clone().payload, Ownership::Publisher);
 
+    let string_num_of_rows_effect = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
-        (format!("{num_of_rows_updated.unwrap()} were affected")),
+        (format!("{string_num_of_rows_effect} were affected")),
         vec![]
     );
 
@@ -303,20 +298,25 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    let list_of_updates = find_updates_by_id_and_ownership(argument.id,
-    Ownership::Subscriber, publisher_name, sheet_name); 
+    let list_of_updates = find_updates_by_id_and_ownership(argument.id.parse().unwrap(),
+                                                           Ownership::Subscriber, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
         return web::Json(Result::error("Failed to send updates".to_string(), vec![]));
     }
-    let successful_argument : Argument = Argument::new(
+
+    let sheet_updates_payload = encoding_updates(list_of_updates.unwrap());
+    let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.id, // needs to be last taken ID
-        list_of_updates.unwrap() // map everything to Argument
+        argument.clone().id, // needs to be last taken ID
+        sheet_updates_payload // map everything to Argument
     );
 
-    web::Json(successful_argument)
+    let successfull_result: Result =
+        Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
+
+    web::Json(successfull_result)
 
 }
 
@@ -329,21 +329,25 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    let list_of_updates = find_updates_by_id_and_ownership(&argument.id,
-    Ownership::Publisher, publisher_name, sheet_name); 
+    let list_of_updates = find_updates_by_id_and_ownership((argument.id).parse().unwrap(),
+                                                           Ownership::Publisher, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
         return web::Json(Result::error("Failed to send updates".to_string(), vec![]));
     }
 
-    let successful_argument : Argument = Argument::new(
+    let sheet_updates_payload = encoding_updates(list_of_updates.unwrap());
+    let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
-        argument.id, // get last update 
-        list_of_updates // make to string
+        argument.clone().id, // needs to be last taken ID
+        sheet_updates_payload // map everything to Argument
     );
 
-    web::Json(successful_argument)
+    let successfull_result: Result =
+        Result::new(true, "Successfully retrieved updates for publishers".to_string(), vec![successful_argument]);
+
+    web::Json(successfull_result)
 }
 
 // Written by Brooklyn Schmidt
@@ -366,11 +370,12 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
 
     let unwrapped_new_sheet_elem: NewSheetElem = new_sheet_elem.unwrap();
 
-    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.payload, Ownership::Subscriber);
+    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.clone().payload, Ownership::Subscriber);
 
+    let unwrapped_num_of_rows = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
-        (format!("{num_of_rows_updated.unwrap()} were affected")),
+        (format!("{unwrapped_num_of_rows} were affected")),
         vec![]
     );
 
@@ -400,7 +405,11 @@ fn decoded_sheet(encoded_sheet: &String) -> RustResult<NewSheetElem, String> {
         // title: sheet_title.clone(),
         sheet_row: 1,
         sheet_value: value.to_string(),
-        sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("PArsing issue").to_string(),
+        sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("Parsing issue").to_string(),
         sheet_id: Uuid::new_v4(),
     })
+}
+
+fn encoding_updates(updates: Vec<Updates>) -> String {
+    updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

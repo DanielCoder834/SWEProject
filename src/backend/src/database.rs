@@ -229,6 +229,7 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
         return Err(format!("Error for inserting sheet: {err_msg}"));
     }
 
+
     // Inserting new sheet element
     let insert_sheet_elem_results =
         diesel::insert_into(sheet_elems::table)
@@ -326,6 +327,20 @@ pub fn get_password_of_username(passed_username: &String) -> RustResults<Publish
     if res.is_err() {
         let err_msg = res.err().unwrap().to_string();
         return Err(Result::error(err_msg, vec![]));
+    }
+    Ok(res.unwrap())
+}
+
+pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uuid, Result> {
+    use crate::schema::sheets::dsl::{sheets, title, id};
+    let res = sheets
+        .filter(title.eq(passed_sheet_name))
+        .select((id))
+        .get_result(&mut establish_connection());
+
+    if res.is_err() {
+        let err_msg = res.err().unwrap().to_string();
+        return Err(Result::error(format!("Error Getting Sheet: {err_msg}"), vec![]));
     }
     Ok(res.unwrap())
 }

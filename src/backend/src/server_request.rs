@@ -22,7 +22,7 @@ use uuid::Uuid;
 
 // Our files/structs
 use crate::database;
-use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership};
+use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
 use crate::publisher::{NewPublisherCredentials, Publisher};
 // use crate::publisher;
 use crate::results::*;
@@ -157,16 +157,17 @@ async fn createSheet(argument: web::Json<Argument>)
     };
 
     let sheet_title: &String = &argument.sheet;
+    let sheet_id = Uuid::new_v4();
     let new_sheet: New_Test_Sheet = New_Test_Sheet {
         title: sheet_title.clone(),
-        id: Uuid::new_v4(),
+        id: sheet_id,
     };
 
     let payload = &argument.payload;
 
     // Initial Sheet Element
     let initial_sheet_element: NewSheetElem = if payload.len() != 0 {
-        let result_decoding_sheet = decoded_sheet(payload);
+        let result_decoding_sheet = decoded_sheet(payload, sheet_id);
         let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
             result_decoding_sheet.unwrap()
         } else {
@@ -178,7 +179,7 @@ async fn createSheet(argument: web::Json<Argument>)
         new_sheet_element
     } else {
         // Add error handling for duplicate ids
-        NewSheetElem::default()
+        NewSheetElem::default(sheet_id)
     };
 
     // let sheet_id =
@@ -228,6 +229,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
         "Sheets retrieved successfully".to_string(),
         list_of_arguments);
 
+    // TODO return the sheet elemenets as well
     return web::Json(result);
 }
 
@@ -268,7 +270,9 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    let new_sheet_elem = decoded_sheet(&argument.payload);
+    // TODO: Find sheet by name and get the id
+    let sheet_id = get_sheet_id_by_sheet_name(sheet_name).unwrap();
+    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
     if new_sheet_elem.is_err() {
         return web::Json(Result::new(
             true,
@@ -293,7 +297,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
 // Retrieves list of updates for subscribers from database
 // Error handles
 // Returns argument object
-#[get("/api/vi/getUpdatesForSubscription")]
+#[get("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
@@ -324,7 +328,7 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
 // Retrieves list of updates for publisher from database
 // Error handles
 // Returns argument object
-#[get("/api/vi/getUpdatesForPublished")]
+#[get("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
@@ -354,16 +358,18 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
 // Gets the provided argument's sheet and publisher
 // Decodes the payload into a new sheet element
 // Updates the sheet with the decoded payload
-#[post("/api/vi/updateSubscription")]
+#[post("/api/v1/updateSubscription")]
 async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    let new_sheet_elem = decoded_sheet(&argument.payload);
+    let sheet_id = get_sheet_id_by_sheet_name(sheet_name).unwrap();
+    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
     if new_sheet_elem.is_err() {
+        let err_msg = new_sheet_elem.err().unwrap();
         return web::Json(Result::new(
-            true,
-            "Failed to update sheet".to_string(),
+            false,
+            format!("Failed to update sheet. Error: {err_msg}"),
             vec![]
         ));
     }
@@ -389,7 +395,7 @@ pub async fn ping() -> impl Responder {
 
 // TODO: Make the decoding possible for multiple entries in a payload
 // Recommend using .split("$"), possibly making a small function for a single payload, and then map -> collect<NewSheetElem>
-fn decoded_sheet(encoded_sheet: &String) -> RustResult<NewSheetElem, String> {
+fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
     if (*encoded_sheet).chars().nth(0).expect("parsing issue").to_string() != "$" {
         return Err("Incorrect Sheet Meta String Length or no $".to_string());
     }
@@ -405,8 +411,9 @@ fn decoded_sheet(encoded_sheet: &String) -> RustResult<NewSheetElem, String> {
         // title: sheet_title.clone(),
         sheet_row: 1,
         sheet_value: value.to_string(),
-        sheet_column_identifier: meta_sheet_data.chars().nth(1).expect("Parsing issue").to_string(),
-        sheet_id: Uuid::new_v4(),
+        sheet_column_identifier: meta_sheet_data
+            .chars().nth(1).expect("Parsing issue").to_string(),
+        sheet_id,
     })
 }
 

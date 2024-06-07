@@ -144,13 +144,13 @@ pub struct NewSheetElem {
 }
 
 impl NewSheetElem {
-    pub fn default() -> Self {
+    pub fn default(sheet_id: Uuid) -> Self {
         Self {
             id: Uuid::new_v4(),
             sheet_column_identifier: "A".to_string(),
             sheet_row: 0,
             sheet_value: "".to_string(),
-            sheet_id: Uuid::new_v4(),
+            sheet_id,
         }
     }
 }

@@ -17,6 +17,7 @@ mod updates;
 // Our File Functions/Structs
 use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
 use database::password_and_username_in_db;
+use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
 
 async fn do_auth(
     req: ServiceRequest,
@@ -50,7 +51,11 @@ async fn main() -> std::io::Result<()> {
             .service(createSheet)
             .service(getSheets)
             .service(deleteSheet)
-            .service(getPublishers);
+            .service(getPublishers)
+            .service(updatePublished)
+            .service(updateSubscription)
+            .service(getUpdatesForPublished)
+            .service(getUpdatesForSubscription);
         App::new()
             .service(register)
             .service(ping)

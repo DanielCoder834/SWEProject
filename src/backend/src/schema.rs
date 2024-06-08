@@ -1,4 +1,10 @@
 // @generated automatically by Diesel CLI.
+pub mod sql_types {
+    #[derive(diesel::sql_types::SqlType, diesel::query_builder::QueryId)]
+    #[diesel(postgres_type(name = "Ownership"))]
+    pub struct OwnershipType;
+}
+
 diesel::table! {
     publisher_sheets (sheets_id, publisher_id) {
         sheets_id -> Uuid,
@@ -39,6 +45,7 @@ diesel::table! {
 diesel::table! {
     use diesel::sql_types::*;
     use crate::updates::OwnershipType;
+    // use diesel::sql_types::OwnershipType;
 
     updates (id) {
         id -> Serial,

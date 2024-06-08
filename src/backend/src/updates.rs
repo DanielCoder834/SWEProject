@@ -31,9 +31,9 @@ pub struct NewUpdates {
     pub update_value: String,
 }
 
-
+//, schema = "Updates"
 #[derive(SqlType, QueryId)]
-#[diesel(postgres_type(name = "Ownership", schema = "Updates"))]
+#[diesel(postgres_type(name = "ownership"))]
 pub struct OwnershipType;
 
 #[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq, Clone, Hash, serde::Deserialize)]

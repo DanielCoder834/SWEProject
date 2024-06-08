@@ -3,34 +3,26 @@
 
 #[cfg(test)]
 mod tests {
+    // Tip: Use dbg!(<value>) to debug
     use super::*;
-    use std::sync::Mutex;
     use actix_web::{test, App, web, HttpRequest};
+    use actix_web::body::BoxBody;
+    use actix_web::dev::{HttpServiceFactory, Service, ServiceResponse, WebService};
     use actix_web::http::header;
     use actix_web::web::Data;
     use libs::server_request::{register, ping};
-    use libs::database::DataStructure;
     use libs::results::Result;
     use actix_web_httpauth::extractors::basic::BasicAuth;
     use actix_web_httpauth::headers::authorization::Basic;
+    use actix_http::Request;
 
     #[actix_web::test]
     async fn test_request_get() {
-        // TODO: add more boilerplate functions
-        let db_wrapped: web::Data<Mutex<DataStructure>> = actix_web::web::Data::new(Mutex::new(DataStructure::default()));
-        // let db = db_wrapped.lock().unwrap().storage;
-        let app = test::init_service(
-            App::new()
-                .app_data(db_wrapped)
-                .service(register))
-                .await;
-        let basicAuth = Basic::new("user", Some("pass"));
-        let req = test::TestRequest::put().uri("/api/v1/register")
-            .insert_header((
-                    actix_web::http::header::AUTHORIZATION,
-                    basicAuth
-                )).to_request();
-        let resp: Result = test::call_and_read_body_json(&app, req).await;
+        let app = make_app(vec![register]).await;
+        let resp: Result = get_route_result_with_auth(
+            "/api/v1/register",
+            app,
+            Basic::new("user", Some("pass"))).await;
         assert!(resp.success);
     }
 
@@ -40,6 +32,56 @@ mod tests {
         let req = test::TestRequest::get().uri("/api/v1/ping").to_request();
         let resp = test::call_service(&app, req).await;
         // println!("WHY: {}", resp.response());
-        // assert!(resp.status().is_success());
+        assert!(resp.status().is_success());
+    }
+
+
+
+    /// # Arguments
+    ///
+    /// * `routes`: The various routes you want to pass in
+    ///
+    /// # Examples
+    ///
+    // ```
+    // The Register Test
+    // ```
+    // Don't worry about the logic with impl and T. They are a thing called traits,
+    // which are like required functions that needed to be implemented.
+    async fn make_app<T: HttpServiceFactory + 'static>(routes: Vec<T>)
+        -> impl Service<Request, Response = ServiceResponse<BoxBody>, Error = actix_web::Error> {
+        test::init_service(
+            App::new()
+        .service(register)).await
+    }
+
+    async fn get_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
+        Error = actix_web::Error>>(
+        path: &str,
+        app: T,
+        basicAuth: Basic,
+    ) -> Result {
+        let req = test::TestRequest::get().uri(path)
+            .insert_header((
+                actix_web::http::header::AUTHORIZATION,
+                basicAuth
+            )).to_request();
+        let resp: Result = test::call_and_read_body_json(&app, req).await;
+        resp
+    }
+
+    async fn post_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
+        Error = actix_web::Error>>(
+        path: &str,
+        app: T,
+        basicAuth: Basic,
+    ) -> Result {
+        let req = test::TestRequest::post().uri(path)
+            .insert_header((
+                actix_web::http::header::AUTHORIZATION,
+                basicAuth
+            )).to_request();
+        let resp: Result = test::call_and_read_body_json(&app, req).await;
+        resp
     }
 }

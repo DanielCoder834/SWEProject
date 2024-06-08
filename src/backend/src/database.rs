@@ -92,11 +92,11 @@ pub fn insert_sheet_elem(sheet_column_identifier: String,
 /// # Examples
 ///
 /// ```
-/// let new_sheet_elem: NewSheetElem = decoded_sheet(&payload);
-/// let num_of_rows_updated = update_sheet_elem(
-/// &new_sheet_elem, &arguement.publisher_name, &arguement.sheet_name, arguement.payload,
-/// Ownership::publisher);
-/// println!(format!("{num_of_rows_updated.unwrap()} were affect"));
+// let new_sheet_elem: NewSheetElem = decoded_sheet(&payload);
+// let num_of_rows_updated = update_sheet_elem(
+// &new_sheet_elem, &arguement.publisher_name, &arguement.sheet_name, arguement.payload,
+// Ownership::publisher);
+// println!(format!("{num_of_rows_updated.unwrap()} were affect"));
 /// ```
 pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
                          publisher_name: &String,
@@ -175,9 +175,9 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
 /// # Examples
 ///
 /// ```
-/// let list_of_updates = find_updates_by_id_and_ownership(arguement.id,
-/// Ownership::Publisher, &arguement.publisher, &arguement.sheet);
-/// Error handle the response from find_updates_by_id_and_ownership
+// let list_of_updates = find_updates_by_id_and_ownership(arguement.id,
+// Ownership::Publisher, &arguement.publisher, &arguement.sheet);
+// Error handle the response from find_updates_by_id_and_ownership
 /// ```
 pub fn find_updates_by_id_and_ownership(
     update_id: i32,

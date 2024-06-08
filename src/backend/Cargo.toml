@@ -24,3 +24,4 @@ diesel = { version = "2.1.6", features = ["postgres", "postgres_backend", "uuid"
 dotenv = "0.15.0"
 uuid =  { version = "1.8.0", features = ["v4", "serde"]}
 chrono = "0.4.38"
+actix-http = "3.7.0"

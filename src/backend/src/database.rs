@@ -335,7 +335,7 @@ pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uui
     use crate::schema::sheets::dsl::{sheets, title, id};
     let res = sheets
         .filter(title.eq(passed_sheet_name))
-        .select((id))
+        .select(id)
         .get_result(&mut establish_connection());
 
     if res.is_err() {

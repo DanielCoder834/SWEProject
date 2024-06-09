@@ -25,3 +25,4 @@ dotenv = "0.15.0"
 uuid =  { version = "1.8.0", features = ["v4", "serde"]}
 chrono = "0.4.38"
 actix-http = "3.7.0"
+diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }

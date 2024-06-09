@@ -22,7 +22,7 @@ pub struct Updates {
     pub update_value: String,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = updates)]
 #[diesel(primary_key(id))]
 pub struct NewUpdates {
@@ -31,34 +31,10 @@ pub struct NewUpdates {
     pub update_value: String,
 }
 
-//, schema = "Updates"
-#[derive(SqlType, QueryId)]
-#[diesel(postgres_type(name = "ownership"))]
-pub struct OwnershipType;
-
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq, Clone, Hash, serde::Deserialize)]
-#[diesel(sql_type = OwnershipType)]
+#[derive(diesel_derive_enum::DbEnum, Clone, serde::Deserialize,
+Debug, Eq, Hash, PartialEq)]
+#[ExistingTypePath = "crate::schema::sql_types::Ownership"]
 pub enum Ownership {
     Publisher,
     Subscriber,
-}
-
-impl ToSql<OwnershipType, Pg> for Ownership {
-    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        match *self {
-            Ownership::Publisher => out.write_all(b"publisher")?,
-            Ownership::Subscriber => out.write_all(b"subscriber")?,
-        }
-        Ok(IsNull::No)
-    }
-}
-
-impl FromSql<OwnershipType, Pg> for Ownership {
-    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        match bytes.as_bytes() {
-            b"publisher" => Ok(Ownership::Publisher),
-            b"subscriber" => Ok(Ownership::Subscriber),
-            _ => Err("Unrecognized enum variant".into()),
-        }
-    }
 }

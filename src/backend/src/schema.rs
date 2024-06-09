@@ -1,8 +1,9 @@
 // @generated automatically by Diesel CLI.
+
 pub mod sql_types {
-    #[derive(diesel::sql_types::SqlType, diesel::query_builder::QueryId)]
-    #[diesel(postgres_type(name = "Ownership"))]
-    pub struct OwnershipType;
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "ownership"))]
+    pub struct Ownership;
 }
 
 diesel::table! {
@@ -43,16 +44,15 @@ diesel::table! {
 }
 
 diesel::table! {
-    use diesel::sql_types::*;
-    use crate::updates::OwnershipType;
-    // use diesel::sql_types::OwnershipType;
+    use diesel::sql_types::{Int4, Uuid, Varchar};
+    use super::sql_types::Ownership;
 
     updates (id) {
-        id -> Serial,
+        id -> Int4,
         owner_id -> Uuid,
         #[max_length = 1000]
         update_value -> Varchar,
-        ownership -> OwnershipType,
+        ownership -> Ownership,
     }
 }
 

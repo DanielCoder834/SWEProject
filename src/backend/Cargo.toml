@@ -4,7 +4,7 @@ path = "src/lib.rs"
 
 
 [package]
-name = "spread_server"
+name = "backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,15 +14,24 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# Responding and Recieving HTTP Requests
 actix-web = { version = "4", features = ["openssl"] }
+# JSON Library
 serde_json = "1.0.79"
 serde = { version = "1.0.197", features = ["derive"] }
+# Also for Responding and Recieving HTTP Requests
 actix-web-httpauth = "0.8.1"
+# For HTTPS
 openssl = { version = "0.10" }
+# For decoding Basic Auth
 base64 = "0.22.1"
+# ORM (Connecting to the database)
 diesel = { version = "2.1.6", features = ["postgres", "postgres_backend", "uuid"] }
+# For getting ENV values
 dotenv = "0.15.0"
+# Creating Ids for the Database
 uuid =  { version = "1.8.0", features = ["v4", "serde"]}
-chrono = "0.4.38"
+# For test helpers
 actix-http = "3.7.0"
+# Ownership enum - making a connection between enums in the database and in rust code
 diesel-derive-enum = { version = "2.1.0", features = ["postgres"] }

@@ -132,7 +132,7 @@ impl SheetElem {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug)]
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(primary_key(id))]
 pub struct NewSheetElem {

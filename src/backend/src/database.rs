@@ -17,7 +17,8 @@ use crate::publisher::Publisher;
 // use crate::schema::sheets;
 use crate::schema::{publisher_sheets, sheets, updates};
 use crate::schema::publishers::dsl::publishers;
-use crate::schema::sheet_elems::dsl::sheet_elems;
+// use crate::schema::sheet_elems::dsl::sheet_elems;
+use crate::schema::sheet_elems::{sheet_column_identifier, sheet_row, sheet_value};
 use crate::schema::sheets::{title};
 use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
 use crate::updates::{NewUpdates, Ownership, Updates};
@@ -55,26 +56,6 @@ pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
         .get_results(&mut establish_connection())
 }
 
-pub fn insert_sheet_elem(sheet_column_identifier: String,
-                         sheet_row: i32,
-                         sheet_value: String,
-                         id: Uuid,
-                         sheet_id: Uuid,
-) -> QueryResult<SheetElem> {
-    use crate::schema::sheet_elems;
-    let new_sheet_elem = NewSheetElem {
-        sheet_column_identifier,
-        sheet_row,
-        sheet_value,
-        id,
-        sheet_id,
-    };
-    let conn = &mut establish_connection();
-    diesel::insert_into(sheet_elems::table)
-        .values(&new_sheet_elem)
-        .returning(SheetElem::as_returning())
-        .get_result(conn)
-}
 
 ///
 ///
@@ -98,13 +79,13 @@ pub fn insert_sheet_elem(sheet_column_identifier: String,
 // Ownership::publisher);
 // println!(format!("{num_of_rows_updated.unwrap()} were affect"));
 /// ```
-pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
+pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
                          publisher_name: &String,
                          sheet_name: &String,
                          payload: String,
                          ownership: Ownership)
                          -> RustResults<usize, Result> {
-    use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id, sheet_value};
+    // use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id};
     use crate::schema::{sheet_elems, updates};
     let publisher_of_sheet = get_password_of_username(publisher_name);
     let publisher = if publisher_of_sheet.is_err() {
@@ -118,26 +99,13 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
     let sheet_ids_of_matching_publishers_and_sheets =
         matching_sheet_name_owned_by_publisher.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
 
-    let new_sheet_col = &new_sheet_elem.sheet_column_identifier;
-    let new_sheet_row = &new_sheet_elem.sheet_row;
-    let new_sheet_value = &new_sheet_elem.sheet_value;
+    // Map and Error handle
+    if let Err(result_error) = update_multiple_sheet_elem(new_sheet_elem,
+                                                          &sheet_ids_of_matching_publishers_and_sheets) {
+        return Err(result_error);
+    }
 
-    let sheet_elements_to_update: QueryResult<Vec<SheetElem>> = diesel::update(
-        sheet_elems::table
-            .filter(sheet_column_identifier.eq(new_sheet_col))
-            .filter(sheet_row.eq(new_sheet_row))
-            .filter(sheet_id.eq_any(sheet_ids_of_matching_publishers_and_sheets)))
-        .set(sheet_value.eq(new_sheet_value))
-        .returning(SheetElem::as_returning())
-        .get_results(&mut establish_connection());
-
-    let sheet_effected_count = if sheet_elements_to_update.is_err() {
-        let err_msg = sheet_elements_to_update.err().unwrap().to_string();
-        return Err(Result::error(format!("Error on updating new sheet elements. Error: {err_msg}"),
-                                 vec![]));
-    } else {
-        sheet_elements_to_update.unwrap().len()
-    };
+    let sheet_effected_count = new_sheet_elem.len();
 
     let new_update = NewUpdates {
         owner_id: publisher.id,
@@ -158,6 +126,32 @@ pub fn update_sheet_elem(new_sheet_elem: &NewSheetElem,
     }
 
     Ok(sheet_effected_count)
+}
+
+
+fn update_multiple_sheet_elem(new_sheet_elem_vec: &Vec<NewSheetElem>,
+                       sheet_ids_of_matching_publishers_and_sheets: &Vec<Uuid>
+) -> RustResults<(), Result> {
+    use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id, sheet_value};
+    new_sheet_elem_vec.iter().map(|new_sheet_elem: &NewSheetElem| {
+        let new_sheet_col = &new_sheet_elem.sheet_column_identifier;
+        let new_sheet_row = &new_sheet_elem.sheet_row;
+        let new_sheet_value = &new_sheet_elem.sheet_value;
+        let sheet_element_to_update: QueryResult<SheetElem> = diesel::update(
+            crate::schema::sheet_elems::table
+                .filter(sheet_column_identifier.eq(new_sheet_col))
+                .filter(sheet_row.eq(new_sheet_row))
+                .filter(sheet_id.eq_any(sheet_ids_of_matching_publishers_and_sheets)))
+            .set(sheet_value.eq(new_sheet_value))
+            .returning(SheetElem::as_returning())
+            .get_result(&mut establish_connection());
+        if sheet_element_to_update.is_err() {
+            let err_msg = sheet_element_to_update.err().unwrap().to_string();
+            return Err(Result::error(format!("Error on updating new sheet elements. Error: {err_msg}"),
+                                     vec![]));
+        }
+        Ok(())
+    }).collect::<RustResults<(), Result>>()
 }
 
 ///
@@ -213,7 +207,7 @@ pub fn find_updates_by_id_and_ownership(
 }
 
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
-                                  new_sheet_elemt: &NewSheetElem,
+                                  new_sheet_elemt: &Vec<NewSheetElem>,
                                   publisher: &Publisher) -> RustResults<(), String> {
     use crate::schema::{publisher_sheets, sheet_elems, sheets};
 

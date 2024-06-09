@@ -24,7 +24,6 @@ use uuid::Uuid;
 use crate::database;
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
 use crate::publisher::{NewPublisherCredentials, Publisher};
-// use crate::publisher;
 use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
@@ -100,7 +99,6 @@ pub async fn register(
         auth_vector[1],
     );
     if result_cred_insert.is_err() {
-        // TODO: should credentials that error-ed
         let err_str = result_cred_insert.err().unwrap().to_string();
         return web::Json(Result::error(
             format!("Error on inserting new credentials. Error: {err_str}").to_string(), vec![]));
@@ -166,9 +164,9 @@ async fn createSheet(argument: web::Json<Argument>)
     let payload = &argument.payload;
 
     // Initial Sheet Element
-    let initial_sheet_element: NewSheetElem = if payload.len() != 0 {
+    let initial_sheet_element: Vec<NewSheetElem> = if payload.len() != 0 {
         let result_decoding_sheet = decoded_sheet(payload, sheet_id);
-        let new_sheet_element: NewSheetElem = if result_decoding_sheet.is_ok() {
+        let new_sheet_element: Vec<NewSheetElem> = if result_decoding_sheet.is_ok() {
             result_decoding_sheet.unwrap()
         } else {
             let err_msg = result_decoding_sheet.err().unwrap();
@@ -179,7 +177,7 @@ async fn createSheet(argument: web::Json<Argument>)
         new_sheet_element
     } else {
         // Add error handling for duplicate ids
-        NewSheetElem::default(sheet_id)
+        vec![NewSheetElem::default(sheet_id)]
     };
 
     // let sheet_id =
@@ -229,7 +227,6 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
         "Sheets retrieved successfully".to_string(),
         list_of_arguments);
 
-    // TODO return the sheet elemenets as well
     return web::Json(result);
 }
 
@@ -261,6 +258,7 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
+
 // Written by Brooklyn Schmidt
 // Gets the provided argument's sheet and publisher
 // Decodes the payload into a new sheet element
@@ -270,23 +268,36 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    // TODO: Find sheet by name and get the id
-    let sheet_id = get_sheet_id_by_sheet_name(sheet_name).unwrap();
+    let result_sheet_id = get_sheet_id_by_sheet_name(sheet_name);
+    let sheet_id = if let Ok(id) = result_sheet_id {
+        id
+    } else {
+        return web::Json(result_sheet_id.err().unwrap());
+    };
     let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
     if new_sheet_elem.is_err() {
-        return web::Json(Result::new(
-            true,
+        return web::Json(Result::error(
             "Failed to update sheet".to_string(),
             vec![]
         ));
     }
-    let unwrapped_new_sheet_elem = new_sheet_elem.unwrap();
-    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.clone().payload, Ownership::Publisher);
+    let unwrapped_new_sheet_elem = if let Ok(new_sheet_elem) = new_sheet_elem {
+        new_sheet_elem
+    } else {
+        return web::Json(Result::error(new_sheet_elem.err().unwrap(), vec![]));
+    };
+    let num_of_rows_updated = update_sheet_elem(
+        &unwrapped_new_sheet_elem, publisher_name, sheet_name,
+        argument.clone().payload, Ownership::Publisher);
+
+    if num_of_rows_updated.is_err() {
+        return web::Json(num_of_rows_updated.err().unwrap());
+    }
 
     let string_num_of_rows_effect = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
-        (format!("{string_num_of_rows_effect} were affected")),
+        (format!("{string_num_of_rows_effect} rows were affected")),
         vec![]
     );
 
@@ -363,7 +374,12 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &argument.sheet;
 
-    let sheet_id = get_sheet_id_by_sheet_name(sheet_name).unwrap();
+    let sheet_id_result = get_sheet_id_by_sheet_name(sheet_name);
+    let sheet_id = if let Ok(sheet_id) = sheet_id_result {
+        sheet_id
+    } else {
+      return web::Json(sheet_id_result.err().unwrap());
+    };
     let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
     if new_sheet_elem.is_err() {
         let err_msg = new_sheet_elem.err().unwrap();
@@ -374,10 +390,13 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
         ));
     }
 
-    let unwrapped_new_sheet_elem: NewSheetElem = new_sheet_elem.unwrap();
+    let unwrapped_new_sheet_elem: Vec<NewSheetElem> = new_sheet_elem.unwrap();
 
     let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.clone().payload, Ownership::Subscriber);
 
+    if num_of_rows_updated.is_err() {
+        return web::Json(num_of_rows_updated.err().unwrap());
+    }
     let unwrapped_num_of_rows = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
@@ -393,26 +412,69 @@ pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
 }
 
-// TODO: Make the decoding possible for multiple entries in a payload
-// Recommend using .split("$"), possibly making a small function for a single payload, and then map -> collect<NewSheetElem>
-fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
-    if (*encoded_sheet).chars().nth(0).expect("parsing issue").to_string() != "$" {
-        return Err("Incorrect Sheet Meta String Length or no $".to_string());
+// Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
+fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSheetElem>, String> {
+    if !(*encoded_sheet).contains("$") {
+        return Err("No $".to_string());
     }
-    let values = encoded_sheet.split("\n").collect::<Vec<&str>>();
-    if values.len() != 2 {
-        return Err("Incorrect Number of strings, must be 2".to_string());
+
+    // Split sheet by $
+    let lists_of_seperate_sheet_elems = encoded_sheet.split("$").collect::<Vec<&str>>();
+    // Remove any empty string sheets
+    let no_empty_string_sheet_elems = lists_of_seperate_sheet_elems.into_iter().filter(|payload| !payload.is_empty()).collect::<Vec<&str>>();
+
+    let sheet_elem_vec = no_empty_string_sheet_elems.iter().map(|payload| {
+        decode_sheet_elem(&payload.to_string(), sheet_id)
+        }).collect::<RustResult<Vec<NewSheetElem>, String>>();
+
+    sheet_elem_vec
+}
+
+fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
+    let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
+    let values_length = values.len();
+    if values_length != 2 {
+        return Err(format!("Must have Position information and value information divided by a newline.\
+         Eg. $A0\nValue. String-length: {values_length}, Sheet_elem: {encoded_sheet_elem}"));
     }
+
     let meta_sheet_data = values[0];
-    // meta_sheet_data.chars().nth(2)
-    let value = values[1];
+    let char_row = meta_sheet_data.chars().nth(1);
+    let char_column = meta_sheet_data.chars().nth(0);
+
+    // Parsing Mainly and Error Handling
+    // For Sheet Row
+    let row_value_char = if let Some(value) = char_row {
+        value
+    } else {
+        return Err("No Char at the 2nd position".to_string());
+    };
+    let parse_row_value = if let Some(value) = row_value_char.to_digit(10) {
+        value
+    } else {
+        return Err("Could not parse to integer".to_string());
+    };
+    let sheet_row = if let Some(value) = i32::try_from(parse_row_value).ok() {
+        value
+    } else {
+        return Err("Value might be too big, can not parse from unsigned\
+         32 bit integer to signed 32 bit integer".to_string());
+    };
+
+    // For Sheet Column Identifier
+    let sheet_column_identifier = if let Some(value) = char_column {
+        value.to_string()
+    } else {
+        // dbg!(meta_data_chars);
+        return Err("Value is not found at the 1st position".to_string());
+    };
+
+    let sheet_value = values[1].to_string();
     Ok(NewSheetElem {
         id: Uuid::new_v4(),
-        // title: sheet_title.clone(),
-        sheet_row: 1,
-        sheet_value: value.to_string(),
-        sheet_column_identifier: meta_sheet_data
-            .chars().nth(1).expect("Parsing issue").to_string(),
+        sheet_row,
+        sheet_value,
+        sheet_column_identifier,
         sheet_id,
     })
 }

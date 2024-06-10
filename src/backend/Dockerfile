@@ -11,9 +11,10 @@ COPY Cargo.toml ./
 COPY ../.. .
 
 # Run Rust Code
-RUN cargo run
+RUN cargo build
 
 # Expose the port for the server
 EXPOSE 5000
 
+#RUN chmod +x
 CMD ["cargo run","./src/backend"]

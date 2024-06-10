@@ -1,8 +1,11 @@
+use std::env;
+use actix_cors::Cors;
 // Library Imports
 use actix_web::{
     dev::ServiceRequest, error::ErrorUnauthorized, web, App, Error as ActixError, HttpServer,
 };
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
+use dotenv::dotenv;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 // Our File Modules
@@ -46,6 +49,18 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
+        dotenv().ok();
+
+        let cors = Cors::default()
+            .allowed_origin(&env::var("CORS_URL").unwrap())
+            .allowed_origin_fn(|origin, _req_head| {
+                origin.as_bytes().ends_with(env::var("CORS_ENDING_URL").unwrap().as_bytes())
+            })
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(7900);
+
         let authorized_routes = web::scope("")
             .wrap(HttpAuthentication::basic(do_auth))
             .service(createSheet)
@@ -57,6 +72,7 @@ async fn main() -> std::io::Result<()> {
             .service(getUpdatesForPublished)
             .service(getUpdatesForSubscription);
         App::new()
+            .wrap(cors)
             .service(register)
             .service(ping)
             .service(authorized_routes)

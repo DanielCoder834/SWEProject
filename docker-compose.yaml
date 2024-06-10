@@ -8,6 +8,10 @@ services:
       - '5432:5432'
     volumes:
       - psql-data:/data/db
+    environment:
+      POSTGRES_URI: ${DATABASE_URL}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: 9443
 
   server:
     build:
@@ -15,15 +19,9 @@ services:
       dockerfile: Dockerfile
     container_name: server
     ports:
-      - '8080:8080'
+      - '9443:9443'
     depends_on:
       - postgres
-    environment:
-      POSTGRES_URI: postgres://danielkaplan:password@localhost/SWEDatabase
-#      ${DATABASE_URL}
-      POSTGRES_PASSWORD: password
-#      ${POSTGRES_PASSWORD}
-      SERVER_PORT: 5000
 
 volumes:
   psql-data:

@@ -409,6 +409,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
 
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
+    println!("Pinged");
     HttpResponse::Ok().body("pong")
 }
 

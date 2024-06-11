@@ -1,3 +1,6 @@
+use diesel_migrations::EmbeddedMigrations;
+use diesel_migrations::{embed_migrations, MigrationHarness};
+
 use std::env;
 use actix_cors::Cors;
 // Library Imports
@@ -19,8 +22,10 @@ mod updates;
 
 // Our File Functions/Structs
 use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
-use database::password_and_username_in_db;
+use database::{password_and_username_in_db, establish_connection};
 use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
+
+pub const MIGRATION: EmbeddedMigrations = embed_migrations!("./migrations");
 
 async fn do_auth(
     req: ServiceRequest,
@@ -43,6 +48,9 @@ async fn do_auth(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let mut conn = &mut establish_connection();
+    conn.run_pending_migrations(MIGRATION).unwrap();
+
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
         .set_private_key_file("key.pem", SslFiletype::PEM)
@@ -77,7 +85,8 @@ async fn main() -> std::io::Result<()> {
             .service(ping)
             .service(authorized_routes)
     })
-    .bind_openssl("localhost:9443", builder)?
+        // .bind(("0.0.0.0", 9443))?
+    .bind_openssl("0.0.0.0:9443", builder)?
     .run()
     .await
 }

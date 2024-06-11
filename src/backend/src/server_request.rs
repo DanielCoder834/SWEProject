@@ -8,12 +8,9 @@
 // Result updatePublished(Argument)
 // Result updateSubscription(Argument)
 
-// use std::error::Error;
-// use std::fmt::{Display};
-// use std::sync::Mutex;
-
 
 // Third Party Libraries
+use std::path::Path;
 use actix_web::{HttpRequest, post, web};
 use actix_web::{get, HttpResponse, put, Responder};
 use base64::prelude::*;
@@ -410,6 +407,8 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
     println!("Pinged");
+    println!("Cert Exists: {}", Path::new("./cert.pem").exists());
+    println!("Key Exists: {}", Path::new("./key.pem").exists());
     HttpResponse::Ok().body("pong")
 }
 

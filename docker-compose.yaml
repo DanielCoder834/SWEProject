@@ -24,7 +24,7 @@ services:
     depends_on:
       - postgres
     environment:
-      POSTGRES_URI: postgres://postgres:password@localhost/SWEDatabase
+      DATABASE_URL: postgres://postgres:password@postgres:5432/SWEDatabase
       CORS_URL: https://localhost:9443
       CORS_ENDING_URL: /api/v1
 

@@ -333,6 +333,7 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         </div>
       )}
 
+{"Written by Brooklyn Schmidt"}
       {showDeleteModal && (
               <div className="modal-backdrop">
                 <div className="form-container">

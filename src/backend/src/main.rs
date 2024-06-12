@@ -1,6 +1,8 @@
+use diesel_migrations::EmbeddedMigrations;
+use diesel_migrations::{embed_migrations, MigrationHarness};
+
 use std::env;
 use actix_cors::Cors;
-use actix_web::http::header;
 // Library Imports
 use actix_web::{
     dev::ServiceRequest, error::ErrorUnauthorized, web, App, Error as ActixError, HttpServer,
@@ -16,11 +18,14 @@ mod publisher;
 mod results;
 mod schema;
 mod sheet;
+mod updates;
 
 // Our File Functions/Structs
-use server_request::{ping, register, createSheet, deleteSheet};
-use database::password_and_username_in_db;
-// use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
+use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
+use database::{password_and_username_in_db, establish_connection};
+use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
+
+pub const MIGRATION: EmbeddedMigrations = embed_migrations!("./migrations");
 
 async fn do_auth(
     req: ServiceRequest,
@@ -43,6 +48,9 @@ async fn do_auth(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let mut conn = &mut establish_connection();
+    conn.run_pending_migrations(MIGRATION).unwrap();
+
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
         .set_private_key_file("key.pem", SslFiletype::PEM)
@@ -57,23 +65,27 @@ async fn main() -> std::io::Result<()> {
                 origin.as_bytes().ends_with(env::var("CORS_ENDING_URL").unwrap().as_bytes())
             })
             .allowed_methods(vec!["GET", "POST"])
-            .allowed_header(header::AUTHORIZATION)
-            // .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
-            // .allowed_header(http::header::CONTENT_TYPE)
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE)
             .max_age(7900);
 
         let authorized_routes = web::scope("")
             .wrap(HttpAuthentication::basic(do_auth))
             .service(createSheet)
-            // .service(getSheets)
-            .service(deleteSheet);
+            .service(getSheets)
+            .service(deleteSheet)
+            .service(getPublishers)
+            .service(updatePublished)
+            .service(updateSubscription)
+            .service(getUpdatesForPublished)
+            .service(getUpdatesForSubscription);
         App::new()
             .wrap(cors)
             .service(register)
             .service(ping)
             .service(authorized_routes)
     })
-    .bind_openssl("localhost:9443", builder)?
+    .bind_openssl("0.0.0.0:9443", builder)?
     .run()
     .await
 }

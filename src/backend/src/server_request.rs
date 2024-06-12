@@ -321,8 +321,8 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.clone().id, // needs to be last taken ID
-        sheet_updates_payload // map everything to Argument
+        argument.clone().id,
+        sheet_updates_payload
     );
 
     let successfull_result: Result =
@@ -352,8 +352,8 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
-        argument.clone().id, // needs to be last taken ID
-        sheet_updates_payload // map everything to Argument
+        argument.clone().id,
+        sheet_updates_payload
     );
 
     let successfull_result: Result =

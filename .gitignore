@@ -12,3 +12,4 @@ src/backend/target/.rustc_info.json
 /src/backend/cert.pem
 src/backend/cert.pem
 src/backend/key.pem
+/ignore

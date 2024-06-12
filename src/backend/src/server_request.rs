@@ -1,21 +1,9 @@
-// Needeed Functions
-// Result getPublishers()
-// Result createSheet(Argument)
-// Result getSheets(Argument)
-// Result deleteSheet(Argument)
-// Result getUpdatesForSubscription(Argument)
-// Result getUpdatesForPublished(Argument)
-// Result updatePublished(Argument)
-// Result updateSubscription(Argument)
-
-
 // Third Party Libraries
 use std::path::Path;
 use actix_web::{HttpRequest, post, web};
 use actix_web::{get, HttpResponse, put, Responder};
 use base64::prelude::*;
 use uuid::Uuid;
-// use diesel::row::NamedRow;
 
 // Our files/structs
 use crate::database;
@@ -24,8 +12,6 @@ use crate::publisher::{NewPublisherCredentials, Publisher};
 use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
-
-// Modules
 
 // Type Aliasing
 type RustResult<T, E> = std::result::Result<T, E>;
@@ -321,8 +307,8 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.clone().id,
-        sheet_updates_payload
+        argument.clone().id, // needs to be last taken ID
+        sheet_updates_payload // map everything to Argument
     );
 
     let successfull_result: Result =
@@ -352,8 +338,8 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
-        argument.clone().id,
-        sheet_updates_payload
+        argument.clone().id, // needs to be last taken ID
+        sheet_updates_payload // map everything to Argument
     );
 
     let successfull_result: Result =

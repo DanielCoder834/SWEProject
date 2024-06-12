@@ -85,6 +85,7 @@ async fn main() -> std::io::Result<()> {
             .service(ping)
             .service(authorized_routes)
     })
+        // .bind(("0.0.0.0", 9443))?
     .bind_openssl("0.0.0.0:9443", builder)?
     .run()
     .await

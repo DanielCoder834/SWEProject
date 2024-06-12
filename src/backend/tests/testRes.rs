@@ -16,6 +16,7 @@ mod tests {
     use actix_web_httpauth::headers::authorization::Basic;
     use actix_http::Request;
 
+    // Written by Daniel Kaplan
     #[actix_web::test]
     async fn test_request_get() {
         let app = make_app(vec![register]).await;
@@ -26,6 +27,7 @@ mod tests {
         assert!(resp.success);
     }
 
+    // Written by Daniel Kaplan
     #[actix_web::test]
     async fn test_get() {
         let app = test::init_service(App::new().service(ping)).await;
@@ -37,6 +39,7 @@ mod tests {
 
 
 
+    /// Written by Daniel Kaplan
     /// # Arguments
     ///
     /// * `routes`: The various routes you want to pass in
@@ -55,6 +58,7 @@ mod tests {
         .service(register)).await
     }
 
+    // Written by Daniel Kaplan
     async fn get_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
         Error = actix_web::Error>>(
         path: &str,
@@ -70,6 +74,7 @@ mod tests {
         resp
     }
 
+    // Written by Daniel Kaplan
     async fn post_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
         Error = actix_web::Error>>(
         path: &str,

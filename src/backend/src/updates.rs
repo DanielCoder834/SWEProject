@@ -1,15 +1,11 @@
-use diesel::{AsExpression, FromSqlRow, Identifiable, Insertable, Queryable, QueryId, Selectable, SqlType};
+use diesel::{Identifiable, Insertable, Queryable, Selectable, SqlType};
 use uuid::Uuid;
 use crate::schema::updates;
 
-use std::io::Write;
-use diesel::backend::Backend;
-use diesel::serialize::{self, IsNull, Output, ToSql};
-use diesel::deserialize::{self, FromSql};
-use diesel::pg::{Pg, PgValue};
 // use diesel::sql_types::{Integer};
 // use diesel::not_none;
 
+// Written by Daniel Kaplan
 #[derive(SqlType, PartialEq, Hash, Eq, Debug, serde::Deserialize,
 Clone, Queryable, Selectable, Identifiable)]
 #[diesel(table_name = crate::schema::updates)]
@@ -22,6 +18,7 @@ pub struct Updates {
     pub update_value: String,
 }
 
+// Written by Daniel Kaplan
 #[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = updates)]
 #[diesel(primary_key(id))]
@@ -31,6 +28,7 @@ pub struct NewUpdates {
     pub update_value: String,
 }
 
+// Written by Daniel Kaplan
 #[derive(diesel_derive_enum::DbEnum, Clone, serde::Deserialize,
 Debug, Eq, Hash, PartialEq)]
 #[ExistingTypePath = "crate::schema::sql_types::Ownership"]

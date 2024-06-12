@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// Written by Daniel Kaplan
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Result {
     pub success: bool,
@@ -8,13 +9,7 @@ pub struct Result {
 }
 
 impl Result {
-    pub fn default() -> Self {
-        Result {
-            success: true,
-            message: "".to_string(),
-            value: vec![],
-        }
-    }
+    // Written by Daniel Kaplan
     pub fn new(success: bool, message: String, value: Vec<Argument>) -> Self {
         Result {
             success,
@@ -23,6 +18,7 @@ impl Result {
         }
     }
 
+    // Written by Daniel Kaplan
     pub fn error(message: String, value: Vec<Argument>) -> Self {
         Result {
             success: false,
@@ -32,6 +28,7 @@ impl Result {
     }
 }
 
+// Written by Daniel Kaplan
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Argument {
     pub publisher: String,
@@ -41,14 +38,7 @@ pub struct Argument {
 }
 
 impl Argument {
-    pub fn default() -> Self {
-        Self {
-            publisher: "".to_string(),
-            sheet: "".to_string(),
-            id: "".to_string(),
-            payload: "".to_string(),
-        }
-    }
+    // Written by Daniel Kaplan
     pub fn new(publisher: String, sheet: String, id: String, payload: String) -> Self {
         Self {
             publisher,

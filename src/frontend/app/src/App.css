@@ -126,6 +126,7 @@ label {
 
 .row {
   width: max-content;
+  flex-wrap: nowrap;
 }
 
 .spreadsheet-container {
@@ -148,4 +149,9 @@ label {
 	display: flex;
 	text-align: center;
 	border: solid 1px black;
+}
+
+.spreadsheet-container {
+  display: flex;
+  flex-direction: column;
 }

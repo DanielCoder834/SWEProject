@@ -17,19 +17,32 @@ type CellProps = {
  
 const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     const { gridData, setGridData } = data;
- 
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newData = e.target.value;
- 
+    
         if (newData.startsWith("=")) {
-            const parser = new Parser(newData.substring(1));
+            const expression = newData.substring(1).trim();
+            if (!expression) {
+                updateCell("ERROR: No expression provided");
+                return;
+            }
+    
+            const parser = new Parser(expression);
             const tokens = parser.getTokens();
-            const result = evaluateOperation(tokens); // THE ERROR IS HEREzz
+    
+            if (!tokens.length) {
+                updateCell("ERROR: Invalid tokens");
+                return;
+            }
+    
+            const result = evaluateOperation(tokens);
             updateCell(result.toString());
         } else {
             updateCell(newData);
         }
     };
+    
  
     const updateCell = (val: string) => {
         const newData = [...gridData];
@@ -38,8 +51,83 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     };
  
     const evaluateOperation = (tokens: Token[]) => {
+        if (tokens.length < 3) {
+            console.error("Not enough tokens for operation");
+            return "ERROR";
+        }
+    
         const [x, op, y] = tokens;
+    
+        // Ensure all necessary tokens are present and of correct type
+        if (!op || !x || !y || op.type !== "OPERATOR" || x.type !== "NUMBER" || y.type !== "NUMBER") {
+            console.error("Invalid tokens or types", { x, op, y });
+            return "ERROR";
+        }
+    
+        const numX = parseFloat(x.val);
+        const numY = parseFloat(y.val);
+    
+        if (isNaN(numX) || isNaN(numY)) {
+            console.error(`Invalid number conversion: numX=${numX}, numY=${numY}`);
+            return "ERROR: Invalid numbers";
+        }
+    
+        // Perform operations based on operator
+        switch (op.val) {
+            case "+":
+                return numX + numY;
+            case "-":
+                return numX - numY;
+            case "*":
+                return numX * numY;
+            case "/":
+                if (numY === 0) {
+                    return "ERROR: Division by zero";
+                }
+                return numX / numY;
+            default:
+                console.error("Unsupported operator", op.val);
+                return "ERROR: Unsupported operator";
+        }
+    };
+    
+    
  
+    // Checks if an input is a valid REF.
+    const isRef = (val: Token) => {
+        return /\$[A-Za-z]+[1-9]\d*/.test(val.val);
+    };
+ 
+    // Checks if input REF x comes before input REF y.
+    const compareRefs = (x: Token, y: Token): number => {
+        const col1Match = x.val.match(/[A-Za-z]+/);
+        const row1Match = x.val.match(/\d+/);
+        const col2Match = y.val.match(/[A-Za-z]+/);
+        const row2Match = y.val.match(/\d+/);
+    
+        if (!col1Match || !row1Match || !col2Match || !row2Match) {
+            return 0; // Return 0 or throw an error if regex matching fails
+        }
+    
+        const [col1] = col1Match;
+        const [col2] = col2Match;
+        const row1 = parseInt(row1Match[0], 10);
+        const row2 = parseInt(row2Match[0], 10);
+    
+        if (col1 === col2) {
+            return row1 - row2;
+        }
+    
+        return col1.localeCompare(col2);
+    };
+ 
+    const evaluateFunction = (tokens: Token[]) => {
+        if (tokens.length < 3) return "ERROR"; // Ensure there are enough tokens
+    
+        const [x, op, y] = tokens;
+    
+        if (!op || !x || !y) return "ERROR"; // Check if any tokens are undefined
+    
         switch (op.val) {
             case "+":
                 return typeof x === "number" && typeof y === "number" ? x + y : "ERROR";
@@ -79,76 +167,7 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
                 return "ERROR";
         }
     };
- 
-    // Checks if an input is a valid REF.
-    const isRef = (val: Token) => {
-        return /\$[A-Za-z]+[1-9]\d*/.test(val.val);
-    };
- 
-    // Checks if input REF x comes before input REF y.
-    const compareRefs = (x: Token, y: Token): number => {
-        const col1Match = x.val.match(/[A-Za-z]+/);
-        const row1Match = x.val.match(/\d+/);
-        const col2Match = y.val.match(/[A-Za-z]+/);
-        const row2Match = y.val.match(/\d+/);
-   
-        if (!col1Match || !row1Match || !col2Match || !row2Match) {
-            return 0; // Return 0 or throw an error if regex matching fails
-        }
-   
-        const [col1] = col1Match;
-        const [col2] = col2Match;
-        const row1 = parseInt(row1Match[0], 10);
-        const row2 = parseInt(row2Match[0], 10);
-   
-        if (col1 === col2) {
-            return row1 - row2;
-        }
-   
-        return col1.localeCompare(col2);
-    };
- 
-    const evaluateFunction = (functionToken: Token, argsTokens: Token[]): string => {
-        const funcName = functionToken.val.split('(')[0].toUpperCase();
-        const args = handleFunctionArgs(functionToken.val);
-   
-        switch (funcName) {
-            case 'IF':
-                if (args.length !== 3) return "ERROR";
-                const condition = parseFloat(args[0]);
-                const trueValue = parseFloat(args[1]);
-                const falseValue = parseFloat(args[2]);
-                return !isNaN(condition) ? (condition !== 0 ? trueValue.toString() : falseValue.toString()) : "ERROR";
-            case 'SUM':
-                if (args.every(arg => !isNaN(parseFloat(arg)))) {
-                    const sum = args.reduce((acc, curr) => acc + parseFloat(curr), 0);
-                    return sum.toString();
-                }
-                return "ERROR";
-            case 'MIN':
-                if (args.every(arg => !isNaN(parseFloat(arg)))) {
-                    const min = Math.min(...args.map(Number));
-                    return min.toString();
-                }
-                return "ERROR";
-            case 'MAX':
-                if (args.every(arg => !isNaN(parseFloat(arg)))) {
-                    const max = Math.max(...args.map(Number));
-                    return max.toString();
-                }
-                return "ERROR";
-            case 'AVG':
-                if (args.every(arg => !isNaN(parseFloat(arg)))) {
-                    const avg = args.reduce((acc, curr) => acc + parseFloat(curr), 0) / args.length;
-                    return avg.toString();
-                }
-                return "ERROR";
-            case 'CONCAT':
-                return args.join('');
-            default:
-                return "ERROR";
-        }
-    };
+    
  
     const handleFunctionArgs = (funcString: string): string[] => {
         const argsString = funcString.slice(funcString.indexOf('(') + 1, -1);

@@ -1,10 +1,13 @@
+use std::env;
+use actix_cors::Cors;
+use actix_web::http::header;
 // Library Imports
 use actix_web::{
     dev::ServiceRequest, error::ErrorUnauthorized, web, App, Error as ActixError, HttpServer,
 };
 use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
+use dotenv::dotenv;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
-use std::sync::Mutex;
 
 // Our File Modules
 pub mod server_request;
@@ -15,10 +18,9 @@ mod schema;
 mod sheet;
 
 // Our File Functions/Structs
-use database::DataStructure;
-// use libs::database::DatabaseManager;
-use server_request::{ping, register, createSheet, deleteSheet, getSheets};
-use crate::database::password_and_username_in_db;
+use server_request::{ping, register, createSheet, deleteSheet};
+use database::password_and_username_in_db;
+// use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
 
 async fn do_auth(
     req: ServiceRequest,
@@ -47,12 +49,26 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
+        dotenv().ok();
+
+        let cors = Cors::default()
+            .allowed_origin(&env::var("CORS_URL").unwrap())
+            .allowed_origin_fn(|origin, _req_head| {
+                origin.as_bytes().ends_with(env::var("CORS_ENDING_URL").unwrap().as_bytes())
+            })
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_header(header::AUTHORIZATION)
+            // .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            // .allowed_header(http::header::CONTENT_TYPE)
+            .max_age(7900);
+
         let authorized_routes = web::scope("")
             .wrap(HttpAuthentication::basic(do_auth))
             .service(createSheet)
-            .service(getSheets)
+            // .service(getSheets)
             .service(deleteSheet);
         App::new()
+            .wrap(cors)
             .service(register)
             .service(ping)
             .service(authorized_routes)

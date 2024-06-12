@@ -1,18 +1,15 @@
-import { Component } from "react";
-import { Navigate } from "react-router-dom";
-import { Formik, Field, Form, ErrorMessage } from "formik";
+import React, { Component } from "react";
+import { Formik, Field, Form, ErrorMessage, FormikHelpers } from "formik";
 import * as Yup from "yup";
-
-import AuthService from "../services/auth.service";
 
 type Props = {};
 
 type State = {
-  redirect: string | null,
-  username: string,
-  password: string,
-  loading: boolean,
-  message: string
+  username: string;
+  password: string;
+  loading: boolean;
+  message: string;
+  successful: boolean;  // Added to manage login status
 };
 
 export default class Login extends Component<Props, State> {
@@ -21,24 +18,20 @@ export default class Login extends Component<Props, State> {
     this.handleLogin = this.handleLogin.bind(this);
 
     this.state = {
-      redirect: null,
       username: "",
       password: "",
       loading: false,
-      message: ""
+      message: "",
+      successful: false  // Initial state is false
     };
   }
 
   componentDidMount() {
-    const currentUser = AuthService.getCurrentUser();
-
-    if (currentUser) {
-      this.setState({ redirect: "/profile" });
-    };
-  }
-
-  componentWillUnmount() {
-    window.location.reload();
+    // Check if user is already logged in and set state accordingly
+    const isUserLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    if (isUserLoggedIn) {
+      this.setState({ successful: true, message: "Already logged in." });
+    }
   }
 
   validationSchema() {
@@ -48,43 +41,32 @@ export default class Login extends Component<Props, State> {
     });
   }
 
-  handleLogin(formValue: { username: string; password: string }) {
-    const { username, password } = formValue;
+  handleLogin(values: { username: string; password: string }, { setSubmitting }: FormikHelpers<{ username: string; password: string }>) {
+    const { username, password } = values;
 
-    this.setState({
-      message: "",
-      loading: true
-    });
+    this.setState({ message: "", loading: true });
 
-
-    AuthService.login(username, password).then(
-      () => {
-        this.setState({
-          redirect: "/profile"
-        });
-      },
-      error => {
-        const resMessage =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-
-        this.setState({
-          loading: false,
-          message: resMessage
-        });
-      }
-    );
+    // Check credentials against local storage
+    if (username === localStorage.getItem("username") && password === localStorage.getItem("password")) {
+      localStorage.setItem("isLoggedIn", "true");
+      this.setState({
+        successful: true,
+        message: "Login successful!",
+        loading: false
+      });
+      setSubmitting(false);
+    } else {
+      this.setState({
+        successful: false,
+        message: "Invalid credentials",
+        loading: false
+      });
+      setSubmitting(false);
+    }
   }
 
   render() {
-    if (this.state.redirect) {
-      return <Navigate to={this.state.redirect} />
-    }
-
-    const { loading, message } = this.state;
+    const { loading, message, successful } = this.state;
 
     const initialValues = {
       username: "",
@@ -94,12 +76,6 @@ export default class Login extends Component<Props, State> {
     return (
       <div className="col-md-12">
         <div className="card card-container">
-          <img
-            src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
-            alt="profile-img"
-            className="profile-img-card"
-          />
-
           <Formik
             initialValues={initialValues}
             validationSchema={this.validationSchema}
@@ -109,21 +85,13 @@ export default class Login extends Component<Props, State> {
               <div className="form-group">
                 <label htmlFor="username">Username</label>
                 <Field name="username" type="text" className="form-control" />
-                <ErrorMessage
-                  name="username"
-                  component="div"
-                  className="alert alert-danger"
-                />
+                <ErrorMessage name="username" component="div" className="alert alert-danger" />
               </div>
 
               <div className="form-group">
                 <label htmlFor="password">Password</label>
                 <Field name="password" type="password" className="form-control" />
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="alert alert-danger"
-                />
+                <ErrorMessage name="password" component="div" className="alert alert-danger" />
               </div>
 
               <div className="form-group">
@@ -131,13 +99,13 @@ export default class Login extends Component<Props, State> {
                   {loading && (
                     <span className="spinner-border spinner-border-sm"></span>
                   )}
-                  <span>Login</span>
+                  Login
                 </button>
               </div>
 
               {message && (
                 <div className="form-group">
-                  <div className="alert alert-danger" role="alert">
+                  <div className={successful ? "alert alert-success" : "alert alert-danger"} role="alert">
                     {message}
                   </div>
                 </div>

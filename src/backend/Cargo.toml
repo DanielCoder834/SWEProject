@@ -2,7 +2,6 @@
 name = "libs"
 path = "src/lib.rs"
 
-
 [package]
 name = "spread_server"
 version = "0.1.0"
@@ -18,8 +17,10 @@ actix-web = { version = "4", features = ["openssl"] }
 serde_json = "1.0.79"
 serde = { version = "1.0.197", features = ["derive"] }
 actix-web-httpauth = "0.8.1"
-openssl = { version = "0.10" }
+openssl = { version = "0.10", features = ["vendored"] }  # Adjusted this line
 base64 = "0.22.1"
 diesel = { version = "2.1.6", features = ["postgres", "postgres_backend"] }
 dotenv = "0.15.0"
 uuid = "1.8.0"
+http = "1.1.0"
+actix-cors = "0.7.0"

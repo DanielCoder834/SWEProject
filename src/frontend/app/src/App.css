@@ -155,3 +155,7 @@ label {
   display: flex;
   flex-direction: column;
 }
+
+.jumbotron {
+  display: none; /* Hides the jumbotron from view */
+}

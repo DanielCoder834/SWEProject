@@ -1,17 +1,28 @@
+// Needeed Functions
+// Result getPublishers()
+// Result createSheet(Argument)
+// Result getSheets(Argument)
+// Result deleteSheet(Argument)
+// Result getUpdatesForSubscription(Argument)
+// Result getUpdatesForPublished(Argument)
+// Result updatePublished(Argument)
+// Result updateSubscription(Argument)
+
+
 // Third Party Libraries
 use std::path::Path;
-use actix_web::{HttpRequest, post, web};
-use actix_web::{get, HttpResponse, put, Responder};
+use actix_web::{get, HttpResponse, Responder, HttpRequest, post, web};
 use base64::prelude::*;
 use uuid::Uuid;
+// use diesel::row::NamedRow;
 
 // Our files/structs
-use crate::database;
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
-use crate::publisher::{NewPublisherCredentials, Publisher};
 use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
+
+// Modules
 
 // Type Aliasing
 type RustResult<T, E> = std::result::Result<T, E>;
@@ -100,6 +111,7 @@ pub async fn register(
 - Gets all the publishers from the database
 - On success returns all publishers of newly created argument objects
 */
+#[allow(non_snake_case)]
 #[get("/api/v1/getPublishers")]
 async fn getPublishers() -> impl Responder {
     let all_publishers_result = get_all_publishers();
@@ -125,7 +137,7 @@ async fn getPublishers() -> impl Responder {
 - Gets the publisher from the database
 - Creates a new sheet and updates database
 */
-
+#[allow(non_snake_case)]
 #[post("/api/v1/createSheet")]
 async fn createSheet(argument: web::Json<Argument>)
                      -> impl Responder {
@@ -189,6 +201,7 @@ async fn createSheet(argument: web::Json<Argument>)
 // - Gets list of sheets that they have
 // */
 //
+#[allow(non_snake_case)]
 #[post("/api/v1/getSheets")]
 async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
     let publisher_username = &argument.publisher;
@@ -221,6 +234,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
 // - Update database
 // */
 //
+#[allow(non_snake_case)]
 #[post("/api/v1/deleteSheet")]
 async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
@@ -232,10 +246,12 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
         return web::Json(delete_sheet_result.err().unwrap());
     }
 
-    let (sheet_deletion_count, relation_deletion_count) = delete_sheet_result.unwrap();
+    let (sheet_deletion_count, relation_deletion_count, sheet_elem_deletion_count) = delete_sheet_result.unwrap();
     let successful_result = Result::new(
         true,
-        format!("Deleted sheet: {sheet_deletion_count} - Deleted Relatons: {relation_deletion_count}"),
+        format!("Deleted sheet: {sheet_deletion_count} -\
+         Deleted Relatons: {relation_deletion_count} -\
+          Sheet Elem: {sheet_elem_deletion_count}"),
          vec![]);
 
     web::Json(successful_result)
@@ -246,6 +262,7 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
 // Gets the provided argument's sheet and publisher
 // Decodes the payload into a new sheet element
 // Updates the sheet with the decoded payload
+#[allow(non_snake_case)]
 #[post("api/v1/updatePublished")]
 async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
@@ -280,7 +297,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let string_num_of_rows_effect = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
-        (format!("{string_num_of_rows_effect} rows were affected")),
+        format!("{string_num_of_rows_effect} rows were affected"),
         vec![]
     );
 
@@ -291,6 +308,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
 // Retrieves list of updates for subscribers from database
 // Error handles
 // Returns argument object
+#[allow(non_snake_case)]
 #[get("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
@@ -322,6 +340,7 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
 // Retrieves list of updates for publisher from database
 // Error handles
 // Returns argument object
+#[allow(non_snake_case)]
 #[get("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
@@ -352,6 +371,7 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
 // Gets the provided argument's sheet and publisher
 // Decodes the payload into a new sheet element
 // Updates the sheet with the decoded payload
+#[allow(non_snake_case)]
 #[post("/api/v1/updateSubscription")]
 async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
@@ -383,13 +403,14 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let unwrapped_num_of_rows = num_of_rows_updated.unwrap();
     let successful_result : Result = Result::new(
         true,
-        (format!("{unwrapped_num_of_rows} were affected")),
+        format!("{unwrapped_num_of_rows} were affected"),
         vec![]
     );
 
     web::Json(successful_result)
 }
 
+// Written by Daniel Kaplan
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
     println!("Pinged");
@@ -398,6 +419,7 @@ pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
 }
 
+// Written by Daniel Kaplan
 // Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
 fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSheetElem>, String> {
     if !(*encoded_sheet).contains("$") {
@@ -416,6 +438,7 @@ fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSh
     sheet_elem_vec
 }
 
+// Written by Daniel Kaplan
 fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
     let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
     let values_length = values.len();
@@ -465,6 +488,7 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
     })
 }
 
+// Written by Daniel Kaplan
 fn encoding_updates(updates: Vec<Updates>) -> String {
     updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

@@ -9,7 +9,7 @@ Types are defined as follows:
 */
 type TokenType = "REF" | "FORMULA" | "OPERATOR" | "FUNCTION" | "WHITESPACE";
  
-interface Token {
+export interface Token {
     type: TokenType;
     val: string;
 }

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import Cell from "./cell";
+import React, { useState, useEffect } from 'react';
+import Cell from './cell';
 
 type SpreadsheetProps = {
   dimensions: { rows: number; columns: number };
@@ -15,14 +15,32 @@ const Spreadsheet: React.FC<SpreadsheetProps> = ({ dimensions }) => {
   const [gridData, setGridData] = useState(createInitialGrid());
 
   useEffect(() => {
-    setGridData(createInitialGrid());
+    setGridData(createInitialGrid()); // Resets the grid when dimensions change
   }, [rows, columns]);
+
+  const numToCol = (index: number) => {
+    let label = '';
+    let alphaIndex = index;
+    while (alphaIndex >= 0) {
+      label = String.fromCharCode((alphaIndex % 26) + 65) + label;
+      alphaIndex = Math.floor(alphaIndex / 26) - 1;
+    }
+    return label;
+  };
 
   return (
     <div className="spreadsheet-container">
+      <div className="row colLabel">
+        {Array.from({ length: columns }, (_, index) => (
+          <div key={`header-${index}`} className="cell header">
+            {numToCol(index)}
+          </div>
+        ))}
+      </div>
       {gridData.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
-          {row.map((cellData, colIndex) => (
+          <div className="rowLabel">{rowIndex + 1}</div>
+          {row.map((_, colIndex) => (
             <Cell
               key={`${rowIndex}-${colIndex}`}
               row={rowIndex}

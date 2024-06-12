@@ -22,23 +22,23 @@ export default class Home extends Component<Props, State> {
     };
   }
 
-  componentDidMount() {
-    UserService.getPublicContent().then(
-      response => {
-        this.setState({
-          content: response.data
-        });
-      },
-      error => {
-        this.setState({
-          content:
-            (error.response && error.response.data) ||
-            error.message ||
-            error.toString()
-        });
-      }
-    );
-  }
+  // componentDidMount() {
+  //   UserService.getPublicContent().then(
+  //     response => {
+  //       this.setState({
+  //         content: response.data
+  //       });
+  //     },
+  //     error => {
+  //       this.setState({
+  //         content:
+  //           (error.response && error.response.data) ||
+  //           error.message ||
+  //           error.toString()
+  //       });
+  //     }
+  //   );
+  // }
 
   render() {
     const { dimensions, title, onCreateSpreadsheet } = this.props;

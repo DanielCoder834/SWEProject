@@ -1,38 +1,38 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/auth/";
+const API_URL = "http://localhost:9443/api/";
 
 class AuthService {
   login(username: string, password: string) {
-    return axios
-      .post(API_URL + "signin", {
-        username,
-        password
-      })
+    return axios.post(API_URL + "login", { username, password })
       .then(response => {
         if (response.data.accessToken) {
-          localStorage.setItem("user", JSON.stringify(response.data));
+          localStorage.setItem("currentUser", JSON.stringify(response.data));
         }
-
         return response.data;
+      }).catch(error => {
+        console.error("Login error:", error.response ? error.response.data : 'No response');
+        throw error;
       });
   }
 
   logout() {
-    localStorage.removeItem("user");
+    localStorage.removeItem("currentUser");
   }
 
   register(username: string, password: string) {
-    return axios.post(API_URL + "signup", {
-      username,
-      password
-    });
+    return axios.post(API_URL + "register", { username, password })
+      .then(response => {
+        return response.data;
+      }).catch(error => {
+        console.error("Registration error:", error.response ? error.response.data : 'No response');
+        throw error;
+      });
   }
 
   getCurrentUser() {
-    const userStr = localStorage.getItem("user");
+    const userStr = localStorage.getItem("currentUser");
     if (userStr) return JSON.parse(userStr);
-
     return null;
   }
 }

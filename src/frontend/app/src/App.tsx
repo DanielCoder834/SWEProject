@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 import AuthService from "./services/auth.service";
-import IUser from './types/user.type';
+import IUser from './types/user.type'; // Ensure this path accurately reflects where IUser is defined
 
 import Login from "./components/login.component";
 import Register from "./components/register.component";
@@ -21,7 +21,7 @@ type Props = {};
 type State = {
   showModeratorBoard: boolean,
   showAdminBoard: boolean,
-  currentUser: IUser | undefined,
+  currentUser: IUser | null, // Adjusted to be nullable
   dimensions: { rows: number, columns: number },
   title: string
 }
@@ -34,7 +34,7 @@ class App extends Component<Props, State> {
     this.state = {
       showModeratorBoard: false,
       showAdminBoard: false,
-      currentUser: undefined,
+      currentUser: null, // Initially there's no user
       dimensions: { rows: 10, columns: 20 },  // Default dimensions
       title: "Untitled"
     };
@@ -43,7 +43,7 @@ class App extends Component<Props, State> {
   componentDidMount() {
     const user = AuthService.getCurrentUser();
 
-    if (user) {
+    if (user && user.roles) {
       this.setState({
         currentUser: user,
         showModeratorBoard: user.roles.includes("ROLE_MODERATOR"),
@@ -63,7 +63,7 @@ class App extends Component<Props, State> {
     this.setState({
       showModeratorBoard: false,
       showAdminBoard: false,
-      currentUser: undefined,
+      currentUser: null,
     });
   }
 
@@ -123,8 +123,7 @@ class App extends Component<Props, State> {
 
         <div className="container mt-3">
           <Routes>
-            <Route path="/" element={<Login />} />
-            <Route path="/home" element={<Home dimensions={dimensions} title={title} onCreateSpreadsheet={this.handleCreateSpreadsheet} />} />
+            <Route path="/" element={<Home dimensions={dimensions} title={title} onCreateSpreadsheet={this.handleCreateSpreadsheet} />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />

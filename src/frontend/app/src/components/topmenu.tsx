@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import AuthService from "../services/auth.service";
 
 type TopMenuProps = {
   onCreateSpreadsheet: (rows: number, columns: number, title: string) => void;
@@ -13,14 +14,15 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showOpenModal, setShowOpenModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [createForm] = useState({
-    title: "",
-    rows: 0,
-    columns: 0
-  });
-  const [fileForm] = useState({
-    filename: ""
-  });
+  const [username, setUsername] = useState<string | null>(null);
+  const [userList, setUserList] = useState<string[]>([]);
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username");
+    if (storedUsername) {
+      setUsername(storedUsername);
+    }
+  }, []);
 
   const handleFileClick = () => {
     setShowFileMenu(!showFileMenu);
@@ -67,6 +69,11 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     <div className="top-menu">
       <div className="title-row">
         <div className="title">{title}</div>
+        {username && (
+          <div className="user-info">
+            Logged in as: <strong>{username}</strong>
+          </div>
+        )}
       </div>
       <div className="buttons-row">
         <div className="dropdown">
@@ -83,23 +90,25 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
           <button onClick={handleUserClick}>Users</button>
           {showUserMenu && (
             <ul className="dropdown-content">
-              <li>Bob</li>
-              <li>Joe</li>
-              <li>Sally</li>
+              {userList.map((user, index) => (
+                <li key={index}>{user}</li>
+              ))}
             </ul>
           )}
         </div>
       </div>
 
+      {/* Modals for Create, Open, Save */}
+      {/* Create Modal */}
       {showCreateModal && (
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik
-              initialValues={createForm}
+              initialValues={{ title: "", rows: 0, columns: 0 }}
               validationSchema={validationSchema}
               onSubmit={handleCreateSubmit}
             >
-              {({ errors, touched }) => (
+              {() => (
                 <Form>
                   <div>
                     <label>Title</label>
@@ -125,15 +134,16 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         </div>
       )}
 
+      {/* Open and Save Modals (similar structure) */}
       {showOpenModal && (
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik
-              initialValues={fileForm}
+              initialValues={{ filename: "" }}
               validationSchema={fileValidationSchema}
               onSubmit={handleFileSubmit}
             >
-              {({ errors, touched }) => (
+              {() => (
                 <Form>
                   <div>
                     <label>Filename</label>
@@ -153,11 +163,11 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik
-              initialValues={fileForm}
+              initialValues={{ filename: "" }}
               validationSchema={fileValidationSchema}
               onSubmit={handleFileSubmit}
             >
-              {({ errors, touched }) => (
+              {() => (
                 <Form>
                   <div>
                     <label>Filename</label>

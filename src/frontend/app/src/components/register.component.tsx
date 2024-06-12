@@ -1,9 +1,9 @@
-import { Component } from "react";
+import React, { Component } from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import React from 'react';
-
 import AuthService from "../services/auth.service";
+import axios from "axios";
+
 
 type Props = {};
 
@@ -30,61 +30,40 @@ export default class Register extends Component<Props, State> {
   validationSchema() {
     return Yup.object().shape({
       username: Yup.string()
-        .test(
-          "len",
-          "The username must be between 3 and 20 characters.",
-          (val: any) =>
-            val && val.toString().length >= 3 && val.toString().length <= 20
-        )
+        .min(3, "The username must be at least 3 characters long")
+        .max(20, "The username cannot be more than 20 characters long")
         .required("This field is required!"),
       password: Yup.string()
-        .test(
-          "len",
-          "The password must be between 6 and 40 characters.",
-          (val: any) =>
-            val && val.toString().length >= 6 && val.toString().length <= 40
-        )
+        .min(6, "The password must be at least 6 characters long")
+        .max(40, "The password cannot be more than 40 characters long")
         .required("This field is required!"),
     });
   }
 
-  handleRegister(formValue: {
-    username: string;
-    password: string;
-  }) {
+  handleRegister(formValue: { username: string; password: string }) {
     const { username, password } = formValue;
-
-    this.setState({
-      message: "",
-      successful: false,
-    });
-
+  
+    this.setState({ message: "", successful: false });
+  
     AuthService.register(username, password).then(
-      (response) => {
+      response => {
         this.setState({
-          message: response.data.message,
+          message: response.message,
           successful: true,
         });
       },
-      (error) => {
-        const resMessage =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString();
-
+      error => {
         this.setState({
           successful: false,
-          message: resMessage,
+          message: error.message || "Some error occurred."
         });
       }
     );
   }
+  
 
   render() {
     const { successful, message } = this.state;
-
     const initialValues = {
       username: "",
       password: "",
@@ -93,64 +72,35 @@ export default class Register extends Component<Props, State> {
     return (
       <div className="col-md-12">
         <div className="card card-container">
-          <img
-            src="//ssl.gstatic.com/accounts/ui/avatar_2x.png"
-            alt="profile-img"
-            className="profile-img-card"
-          />
-
           <Formik
             initialValues={initialValues}
-            validationSchema={this.validationSchema}
+            validationSchema={this.validationSchema()}
             onSubmit={this.handleRegister}
           >
             <Form>
               {!successful && (
                 <div>
                   <div className="form-group">
-                    <label htmlFor="username"> Username </label>
-                    <Field
-                      name="username"
-                      type="text"
-                      className="form-control"
-                    />
-                    <ErrorMessage
-                      name="username"
-                      component="div"
-                      className="alert alert-danger"
-                    />
+                    <label htmlFor="username">Username</label>
+                    <Field name="username" type="text" className="form-control" />
+                    <ErrorMessage name="username" component="div" className="alert alert-danger" />
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="password"> Password </label>
-                    <Field
-                      name="password"
-                      type="password"
-                      className="form-control"
-                    />
-                    <ErrorMessage
-                      name="password"
-                      component="div"
-                      className="alert alert-danger"
-                    />
+                    <label htmlFor="password">Password</label>
+                    <Field name="password" type="password" className="form-control" />
+                    <ErrorMessage name="password" component="div" className="alert alert-danger" />
                   </div>
 
                   <div className="form-group">
-                    <button type="submit" className="btn btn-primary btn-block">
-                      Sign Up
-                    </button>
+                    <button type="submit" className="btn btn-primary btn-block">Sign Up</button>
                   </div>
                 </div>
               )}
 
               {message && (
                 <div className="form-group">
-                  <div
-                    className={
-                      successful ? "alert alert-success" : "alert alert-danger"
-                    }
-                    role="alert"
-                  >
+                  <div className={successful ? "alert alert-success" : "alert alert-danger"} role="alert">
                     {message}
                   </div>
                 </div>

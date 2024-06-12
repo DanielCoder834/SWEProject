@@ -91,9 +91,8 @@ label {
 .cell-input {
   border: 1px solid #ccc;
   padding: 8px;
-  margin: 2px;
-  width: 100px;  /* Adjust the width as needed */
-  height: 20px;  /* Adjust the height as needed */
+  width: 50px;
+  height: fit-content;
 }
 
 .modal-backdrop {
@@ -118,4 +117,38 @@ label {
 
 .hidden {
   display: none;
+}
+
+.spreadsheet-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-wrap: nowrap; /* Prevents cells from wrapping into a new line */
+  min-width: fit-content; /* Ensures row extends to fit all cells */
+}
+ 
+.cell {
+  border: solid 1px black;
+  width: 50px;
+}
+ 
+.rowLabel {
+  width: 25px;
+  border: solid 2px black;
+  text-align: center;
+}
+ 
+.colLabel {
+  margin-left: 9px;
+  width: max-content;
+  display: flex;
+  text-align: center;
+  border: solid 1px black;
+}
+
+.jumbotron {
+  display: none; /* Hides the jumbotron from view */
 }

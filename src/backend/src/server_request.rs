@@ -116,7 +116,7 @@ async fn getPublishers() -> impl Responder {
 }
 
 /* Pair-programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Creates a new sheet and updates database
@@ -177,7 +177,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
 
 /* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Gets list of sheets that they have
@@ -209,7 +209,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
 }
 
 /* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
 - Deserializes Json Object
 - Retrieves list of sheets from given Publisher
 - Deletes sheet of name "sheet" from vector
@@ -296,7 +296,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
 // Encodes those updates and sends them back in the payload
 
 #[allow(non_snake_case)]
-#[get("/api/v1/getUpdatesForSubscription")]
+#[post("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &optional_to_string(argument.clone().sheet);
@@ -320,7 +320,6 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
         Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
 
     web::Json(successful_result)
-
 }
 
 // Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
@@ -329,7 +328,7 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
 // Ensures validity of JSON Argument sent
 // Encodes those updates and sends them back in the payload
 #[allow(non_snake_case)]
-#[get("/api/v1/getUpdatesForPublished")]
+#[post("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
     let sheet_name: &String = &optional_to_string(argument.clone().sheet);
@@ -373,6 +372,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     } else {
       return web::Json(sheet_id_result.err().unwrap());
     };
+
     let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
     if new_sheet_elem.is_err() {
         let err_msg = new_sheet_elem.err().unwrap();

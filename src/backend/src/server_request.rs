@@ -14,7 +14,7 @@ use crate::updates::{Ownership, Updates};
 type RustResult<T, E> = std::result::Result<T, E>;
 
 /*
- * Written by Daniel Kaplan
+ *@author Daniel Kaplan
  * Simple: Registers a new user to the database
  * Pipeline from header element to username and password:
  * Header Elements { ..., Authentication: <base64 encoded string>, ... } ->
@@ -92,7 +92,7 @@ pub async fn register(
     web::Json(successfull_result)
 }
 
-/* Written by Daniel Kaplan
+/* @author Daniel Kaplan
 - Gets all the publishers from the database
 - On success returns all publishers of newly created argument objects
 */
@@ -116,7 +116,7 @@ async fn getPublishers() -> impl Responder {
 }
 
 /* Pair-programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan
+@author Daniel Kaplan and Brooklyn Schmidt
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Creates a new sheet and updates database
@@ -177,7 +177,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
 
 /* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan
+@author Daniel Kaplan and Brooklyn Schmidt
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Gets list of sheets that they have
@@ -209,7 +209,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
 }
 
 /* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
-@author Daniel Kaplan
+@author Daniel Kaplan and Brooklyn Schmidt
 - Deserializes Json Object
 - Retrieves list of sheets from given Publisher
 - Deletes sheet of name "sheet" from vector
@@ -400,7 +400,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
     println!("Pinged");
@@ -409,7 +409,7 @@ pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 // Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
 fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSheetElem>, String> {
     if !(*encoded_sheet).contains("$") {
@@ -428,7 +428,7 @@ fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSh
     sheet_elem_vec
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
     let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
     let values_length = values.len();
@@ -478,7 +478,7 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
     })
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 fn encoding_updates(updates: Vec<Updates>) -> String {
     updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

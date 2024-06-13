@@ -2,7 +2,7 @@ use diesel::{Identifiable, Insertable, Queryable, Selectable};
 use uuid::Uuid;
 
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Queryable, Selectable, Identifiable, PartialEq, Debug)]
 #[diesel(table_name = crate::schema::sheets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -13,7 +13,7 @@ pub struct Test_Sheet {
     pub title: String,
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Insertable)]
 #[diesel(table_name = crate::schema::sheets)]
 #[diesel(primary_key(id))]
@@ -23,7 +23,7 @@ pub struct New_Test_Sheet {
     pub(crate) title: String,
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Queryable, Selectable, Identifiable, PartialEq, Debug)]
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -37,7 +37,7 @@ pub struct SheetElem {
 }
 
 impl SheetElem {
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn new(
         id: Uuid,
         sheet_column_identifier: String,
@@ -53,7 +53,7 @@ impl SheetElem {
         }
     }
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn default() -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -65,7 +65,7 @@ impl SheetElem {
     }
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Insertable, Debug)]
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(primary_key(id))]
@@ -78,7 +78,7 @@ pub struct NewSheetElem {
 }
 
 impl NewSheetElem {
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn default(sheet_id: Uuid) -> Self {
         Self {
             id: Uuid::new_v4(),

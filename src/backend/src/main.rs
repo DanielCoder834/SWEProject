@@ -28,7 +28,7 @@ use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, u
 pub const MIGRATION: EmbeddedMigrations = embed_migrations!("./migrations");
 
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 async fn do_auth(
     req: ServiceRequest,
     creds: BasicAuth,
@@ -48,7 +48,8 @@ async fn do_auth(
     }
 }
 
-// Written by Daniel Kaplan
+
+// @author Daniel Kaplan
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let conn = &mut establish_connection();

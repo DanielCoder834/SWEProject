@@ -1,6 +1,3 @@
-// use backend;
-
-
 #[cfg(test)]
 mod tests {
     // Tip: Use dbg!(<value>) to debug
@@ -16,7 +13,7 @@ mod tests {
     use actix_web_httpauth::headers::authorization::Basic;
     use actix_http::Request;
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_request_get() {
         let app = make_app(vec![register]).await;
@@ -27,19 +24,18 @@ mod tests {
         assert!(resp.success);
     }
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_get() {
         let app = test::init_service(App::new().service(ping)).await;
         let req = test::TestRequest::get().uri("/api/v1/ping").to_request();
         let resp = test::call_service(&app, req).await;
-        // println!("WHY: {}", resp.response());
         assert!(resp.status().is_success());
     }
 
 
 
-    /// Written by Daniel Kaplan
+    /// @author Daniel Kaplan
     /// # Arguments
     ///
     /// * `routes`: The various routes you want to pass in
@@ -58,7 +54,7 @@ mod tests {
         .service(register)).await
     }
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     async fn get_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
         Error = actix_web::Error>>(
         path: &str,
@@ -67,14 +63,14 @@ mod tests {
     ) -> Result {
         let req = test::TestRequest::get().uri(path)
             .insert_header((
-                actix_web::http::header::AUTHORIZATION,
+                header::AUTHORIZATION,
                 basicAuth
             )).to_request();
         let resp: Result = test::call_and_read_body_json(&app, req).await;
         resp
     }
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     async fn post_route_result_with_auth<T: Service<Request, Response = ServiceResponse<BoxBody>,
         Error = actix_web::Error>>(
         path: &str,
@@ -83,7 +79,7 @@ mod tests {
     ) -> Result {
         let req = test::TestRequest::post().uri(path)
             .insert_header((
-                actix_web::http::header::AUTHORIZATION,
+                header::AUTHORIZATION,
                 basicAuth
             )).to_request();
         let resp: Result = test::call_and_read_body_json(&app, req).await;

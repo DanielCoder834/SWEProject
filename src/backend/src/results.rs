@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Result {
     pub success: bool,
@@ -9,7 +9,7 @@ pub struct Result {
 }
 
 impl Result {
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn new(success: bool, message: String, value: Vec<Argument>) -> Self {
         Result {
             success,
@@ -18,7 +18,7 @@ impl Result {
         }
     }
 
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn error(message: String, value: Vec<Argument>) -> Self {
         Result {
             success: false,
@@ -28,7 +28,7 @@ impl Result {
     }
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Argument {
     pub publisher: String,
@@ -38,7 +38,7 @@ pub struct Argument {
 }
 
 impl Argument {
-    // Written by Daniel Kaplan
+    // @author Daniel Kaplan
     pub fn new(publisher: String, sheet: String, id: String, payload: String) -> Self {
         Self {
             publisher,
@@ -49,6 +49,7 @@ impl Argument {
     }
 }
 
+// @author Daniel Kaplan
 pub fn string_to_optional(str: String) -> Option<String> {
     if str.is_empty() {
         None
@@ -57,6 +58,7 @@ pub fn string_to_optional(str: String) -> Option<String> {
     }
 }
 
+// @author Daniel Kaplan
 pub fn optional_to_string(opt: Option<String>) -> String {
     if let Some(str) = opt {
         str
@@ -65,6 +67,7 @@ pub fn optional_to_string(opt: Option<String>) -> String {
     }
 }
 
+// @author Daniel Kaplan
 pub fn vector_to_optional<T>(vec: Vec<T>) -> Option<Vec<T>> {
     if vec.is_empty() {
         None

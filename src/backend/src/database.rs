@@ -22,7 +22,7 @@ use crate::updates::{NewUpdates, Ownership, Updates};
 type Result = results::Result;
 type RustResults<T, E> = std::result::Result<T, E>;
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
@@ -40,21 +40,20 @@ pub fn establish_connection() -> PgConnection {
     }
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Publisher> {
     let new_credentials = NewPublisherCredentials {
         id: &Uuid::new_v4(),
         username,
         password,
     };
-    // self.incr_id_publisher += 1;
     diesel::insert_into(schema::publishers::table)
         .values(&new_credentials)
         .returning(Publisher::as_returning())
         .get_result(&mut establish_connection())
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
     use crate::schema::publishers::dsl::{publishers};
     publishers
@@ -63,7 +62,7 @@ pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
 }
 
 
-/// Written by Daniel Kaplan
+/// @author Daniel Kaplan
 ///
 /// # Arguments
 ///
@@ -135,7 +134,7 @@ pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
 }
 
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 fn update_multiple_sheet_elem(new_sheet_elem_vec: &Vec<NewSheetElem>,
                        sheet_ids_of_matching_publishers_and_sheets: &Vec<Uuid>
 ) -> RustResults<(), Result> {
@@ -161,7 +160,7 @@ fn update_multiple_sheet_elem(new_sheet_elem_vec: &Vec<NewSheetElem>,
     }).collect::<RustResults<(), Result>>()
 }
 
-/// Written by Daniel Kaplan
+/// @author Daniel Kaplan
 ///
 /// # Arguments
 ///
@@ -213,7 +212,7 @@ pub fn find_updates_by_id_and_ownership(
     Ok(get_updates_based_on_ids_and_ownership.unwrap())
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
                                   new_sheet_elemt: &Vec<NewSheetElem>,
                                   publisher: &Publisher) -> RustResults<(), String> {
@@ -263,7 +262,7 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
     Ok(())
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
     use crate::schema::{sheets};
     PublisherSheet::belonging_to(publisher)
@@ -273,7 +272,7 @@ pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
         .expect("Oops")
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publisher)
                                          -> Vec<Test_Sheet> {
     PublisherSheet::belonging_to(publisher)
@@ -284,7 +283,7 @@ pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publi
         .expect("Oops")
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title: &String) -> RustResults<(usize, usize, usize), Result> {
     // use crate::schema::{sheet_elems};
     use crate::schema::publisher_sheets::dsl::{publisher_sheets, sheets_id};
@@ -314,8 +313,6 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         delete_sheet_relation.unwrap()
     };
 
-    // TODO: Delete sheet elements as well as sheet
-    //
     let delete_sheet_elem_result =
         diesel::delete(sheet_elems.filter(
             sheet_id.eq_any(sheet_ids_to_delete)
@@ -337,7 +334,7 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
     }
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn get_password_of_username(passed_username: &String) -> RustResults<Publisher, Result> {
     use crate::schema::publishers::dsl::{publishers, username};
     let res = publishers
@@ -352,7 +349,7 @@ pub fn get_password_of_username(passed_username: &String) -> RustResults<Publish
     Ok(res.unwrap())
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uuid, Result> {
     use crate::schema::sheets::dsl::{sheets, title, id};
     let res = sheets
@@ -367,7 +364,7 @@ pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uui
     Ok(res.unwrap())
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> bool {
     use crate::schema::publishers::dsl::{password, publishers, username};
     let exists_credentials = select(exists(publishers
@@ -377,7 +374,7 @@ pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> 
     return exists_credentials.unwrap();
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
 #[diesel(belongs_to(Publisher))]
 #[diesel(table_name = publisher_sheets)]
@@ -387,7 +384,7 @@ struct PublisherSheet {
     pub sheets_id: Uuid,
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Insertable)]
 #[diesel(table_name = publisher_sheets)]
 struct NewPublisherSheet {

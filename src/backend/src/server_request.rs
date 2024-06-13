@@ -1,20 +1,8 @@
-// Needeed Functions
-// Result getPublishers()
-// Result createSheet(Argument)
-// Result getSheets(Argument)
-// Result deleteSheet(Argument)
-// Result getUpdatesForSubscription(Argument)
-// Result getUpdatesForPublished(Argument)
-// Result updatePublished(Argument)
-// Result updateSubscription(Argument)
-
-
 // Third Party Libraries
 use std::path::Path;
 use actix_web::{get, HttpResponse, Responder, HttpRequest, post, web};
 use base64::prelude::*;
 use uuid::Uuid;
-// use diesel::row::NamedRow;
 
 // Our files/structs
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
@@ -22,11 +10,8 @@ use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
 
-// Modules
-
 // Type Aliasing
 type RustResult<T, E> = std::result::Result<T, E>;
-
 
 /*
  * Written by Daniel Kaplan
@@ -130,9 +115,8 @@ async fn getPublishers() -> impl Responder {
     web::Json(Result::new(true, "Successfully got all publishers".to_string(), all_publishers))
 }
 
-
-
-/* Written by Brooklyn Schmidt and Daniel Kaplan
+/* Pair-programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Creates a new sheet and updates database
@@ -171,12 +155,8 @@ async fn createSheet(argument: web::Json<Argument>)
         };
         new_sheet_element
     } else {
-        // Add error handling for duplicate ids
         vec![NewSheetElem::default(sheet_id)]
     };
-
-    // let sheet_id =
-    // let payload: &String = &argument.payload;
 
     let insert_result = insert_sheet_relation_elem(
         &new_sheet,
@@ -194,13 +174,15 @@ async fn createSheet(argument: web::Json<Argument>)
 
     web::Json(successful_result)
 }
-//
-// /* Written by Brooklyn Schmidt and Daniel Kaplan
-// - Deserializes Argument Json Object
-// - Gets the publisher from the database
-// - Gets list of sheets that they have
-// */
-//
+
+
+/* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
+- Deserializes Argument Json Object
+- Gets the publisher from the database
+- Gets list of sheets that they have
+*/
+
 #[allow(non_snake_case)]
 #[post("/api/v1/getSheets")]
 async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
@@ -226,14 +208,14 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
     return web::Json(result);
 }
 
-//
-// /* Written by Brooklyn Schmidt and Daniel Kaplan
-// - Deserializes Json Object
-// - Retrieves list of sheets from given Publisher
-// - Deletes sheet of name "sheet" from vector
-// - Update database
-// */
-//
+/* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
+- Deserializes Json Object
+- Retrieves list of sheets from given Publisher
+- Deletes sheet of name "sheet" from vector
+- Update database
+*/ 
+
 #[allow(non_snake_case)]
 #[post("/api/v1/deleteSheet")]
 async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
@@ -258,10 +240,13 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
 }
 
 
-// Written by Brooklyn Schmidt
-// Gets the provided argument's sheet and publisher
-// Decodes the payload into a new sheet element
-// Updates the sheet with the decoded payload
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Ensures validity of provided sheet ID and ownership type.
+// Retrieves all updated sheet elements from the provided payload
+// Updates sheet given Sheet ID
+// Returns a Message indicating how many elements were updated.
+
 #[allow(non_snake_case)]
 #[post("api/v1/updatePublished")]
 async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
@@ -304,10 +289,12 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
-// Written by Brooklyn Schmidt
-// Retrieves list of updates for subscribers from database
-// Error handles
-// Returns argument object
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Retrieves list of updates given the Sheet ID and Ownership Type
+// Ensures validity of JSON Argument sent
+// Encodes those updates and sends them back in the payload
+
 #[allow(non_snake_case)]
 #[get("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
@@ -325,21 +312,22 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.clone().id, // needs to be last taken ID
-        sheet_updates_payload // map everything to Argument
+        argument.clone().id, 
+        sheet_updates_payload 
     );
 
-    let successfull_result: Result =
+    let successful_result: Result =
         Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
 
-    web::Json(successfull_result)
+    web::Json(successful_result)
 
 }
 
-// Written by Brooklyn Schmidt
-// Retrieves list of updates for publisher from database
-// Error handles
-// Returns argument object
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Retrieves list of updates given the Sheet ID and Ownership Type
+// Ensures validity of JSON Argument sent
+// Encodes those updates and sends them back in the payload
 #[allow(non_snake_case)]
 #[get("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
@@ -367,10 +355,12 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     web::Json(successfull_result)
 }
 
-// Written by Brooklyn Schmidt
-// Gets the provided argument's sheet and publisher
-// Decodes the payload into a new sheet element
-// Updates the sheet with the decoded payload
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Ensures validity of provided sheet ID and ownership type.
+// Retrieves all updated sheet elements from the provided payload
+// Updates sheet given Sheet ID
+// Returns a Message indicating how many elements were updated.
 #[allow(non_snake_case)]
 #[post("/api/v1/updateSubscription")]
 async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {

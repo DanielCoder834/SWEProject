@@ -27,13 +27,14 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     filename: ""
   });
 
-  // Written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // Fetches the publishers when the component mounts.
   useEffect(() => {
-    // Fetch publishers when component mounts
     fetchPublishers();
   }, []);
 
-  // Written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // Fetches publishers from API 
   const fetchPublishers = async () => {
     try {
       const response = await fetch("https://localhost:9443/api/v1/getPublishers", {
@@ -42,6 +43,7 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
       if (response.ok) {
         const data = await response.json();
 
+        // Checks Result struct success field
         if (data.success) {
           const publishers : string[]  = data.value.map((item: { publisher: string; }) => item.publisher);
           setPublishers(publishers);
@@ -58,7 +60,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   };
 
 
-  // Written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // Fetches sheets from API
+  // Parameter is of type Argument, with the publisher field set to the selected user from the User dropdown.
   const fetchSheets = async () => {
     try {
       const argument = {
@@ -75,6 +79,7 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         const data = await response.json();
 
         if (data.success) {
+          // Retrieves the sheet from each List of Argument
           const sheets : string[] = data.value.map((item: {sheet: string;}) => item.sheet);
           setSheets(sheets);
         }
@@ -89,11 +94,14 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   };
 
-  // Written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // Fetches the createSheet call from the API
+  // Parameter is the name of the sheet the user wants to create
+  // Creates a sheet for the User logged in
   const fetchCreate = async (sheetName: string) =>  {
     try {
       const argument =  {
-        publisher: currentUser, // fix
+        publisher: currentUser,
         sheet: sheetName,
         id: "",
         payload: ""
@@ -119,8 +127,10 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   }
 
-  // Written by Brooklyn Schmidt 
-  // can refactor 
+  // @author Brooklyn Schmidt
+  // Fetches the deleteSheets call from the API
+  // Parameter is the name of the sheet the user wants to create
+  // Deletes a sheet from the currently logged in user.
   const fetchDelete = async (sheetName: string) => {
     try {
       const argument =  {
@@ -170,12 +180,14 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     setShowSaveModal(true);
   };
 
-  // Written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // When clicking the delete button, sets the delete modal to true
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   }
 
-  // written by Brooklyn Schmidt
+  // @author Brooklyn Schmidt
+  // When a user selects a user from the list of users, sets the selected user variable to that.
   const handleSaveSelectedUser = (user: string) => {
     setSelectedUser(user);
   }
@@ -203,6 +215,8 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     setShowSaveModal(false);
   };
 
+  // @author Brooklyn Schmidt
+  // When clicking the submit button in the delete modal, deletes the sheet using the filename entered and closes the form.
   const handleDeleteSubmit = (values: {filename: string}) => {
     console.log("Deleting file: " + values.filename);
     fetchDelete(values.filename);
@@ -226,7 +240,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
             </ul>
           )}
         </div>
-        {/* Written by Brooklyn Schmidt */}
+        {/* @author Brooklyn Schmidt
+        Maps the list of publishers to the User dropdown
+        Handles the selected user in the dropdown and fetches the sheets of that user */}
         <div className="dropdown-users">
         <button onClick={handleUserClick}>Users</button>
         {showUserMenu && (
@@ -332,6 +348,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
           </div>
         </div>
       )}
+      {/*@author Brooklyn Schmidt
+      Shows the delete form which allows users to enter the sheet they want to delete.
+      On submission, calls the fetchDelete function.*/}
       {showDeleteModal && (
               <div className="modal-backdrop">
                 <div className="form-container">

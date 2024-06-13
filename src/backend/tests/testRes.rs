@@ -405,6 +405,47 @@ mod tests {
         assert_eq!(resp.message.unwrap_or_else(|| "".to_string()), "Issue with decoding string to utf".to_string());
     }
 
+    // @author Daniel Kaplan
+    #[actix_web::test]
+    async fn test_auth_not_correct_length_register() {
+        // Create the application with the register endpoint
+        let app = test::init_service(App::new().service(register)).await;
+
+        // Create the request with Authorization header
+        let req = test::TestRequest::get()
+            .uri("/api/v1/register")
+            .insert_header((header::AUTHORIZATION, "Basic"))
+            .to_request();
+
+        let resp: Result = test::call_and_read_body_json(&app, req).await;
+        // println!("{:?}", body);
+        // Check if registration failed due to missing username or password
+        assert!(!resp.success);
+        assert_eq!(resp.message.unwrap_or_else(|| "".to_string()), "Passed in more than one string for authentication\
+        . \n Accept Format (Username and password both encoded 64): \
+        Basic username:password \nDenied Format: Basic username1:password1 username2:password2".to_string());
+    }
+
+    // @author Daniel Kaplan
+    #[actix_web::test]
+    async fn test_username_password_not_provided_register() {
+        // Create the application with the register endpoint
+        let app = test::init_service(App::new().service(register)).await;
+
+        let auth = BASE64_STANDARD.encode("::");
+        // Create the request with Authorization header
+        let req = test::TestRequest::get()
+            .uri("/api/v1/register")
+            .insert_header((header::AUTHORIZATION, format!("Basic {auth}")))
+            .to_request();
+
+        let resp: Result = test::call_and_read_body_json(&app, req).await;
+        // println!("{:?}", body);
+        // Check if registration failed due to missing username or password
+        assert!(!resp.success);
+        assert_eq!(resp.message.unwrap_or_else(|| "".to_string()), "Username or password are not provided".to_string());
+    }
+
     /// @author Daniel Kaplan
     /// # Arguments
     ///

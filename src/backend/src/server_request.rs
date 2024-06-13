@@ -61,7 +61,8 @@ pub async fn register(
         Ok(v) => v,
     };
 
-    let auth_vector = if username_and_password_unwrapped.split(":").collect::<Vec<&str>>().len() >= 2 {
+    // Made changes here
+    let auth_vector = if username_and_password_unwrapped.split(":").collect::<Vec<&str>>().join("") != "" {
         username_and_password_unwrapped.split(":").collect::<Vec<&str>>()
     } else {
         return web::Json(Result::error("Username or password are not provided".to_string(), vec![]));

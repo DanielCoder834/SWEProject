@@ -133,18 +133,18 @@ async fn createSheet(argument: web::Json<Argument>)
         result_publisher_of_sheet.unwrap()
     };
 
-    let sheet_title: &String = &argument.sheet;
+    let sheet_title: &String = &optional_to_string(argument.clone().sheet);
     let sheet_id = Uuid::new_v4();
     let new_sheet: New_Test_Sheet = New_Test_Sheet {
         title: sheet_title.clone(),
         id: sheet_id,
     };
 
-    let payload = &argument.payload;
+    let payload = optional_to_string(argument.clone().payload);
 
     // Initial Sheet Element
     let initial_sheet_element: Vec<NewSheetElem> = if payload.len() != 0 {
-        let result_decoding_sheet = decoded_sheet(payload, sheet_id);
+        let result_decoding_sheet = decoded_sheet(&payload, sheet_id);
         let new_sheet_element: Vec<NewSheetElem> = if result_decoding_sheet.is_ok() {
             result_decoding_sheet.unwrap()
         } else {
@@ -220,7 +220,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
 #[post("/api/v1/deleteSheet")]
 async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let delete_sheet_result = delete_sheet_by_sheet_name_and_user(publisher_name, sheet_name);
 
@@ -251,7 +251,7 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
 #[post("api/v1/updatePublished")]
 async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let result_sheet_id = get_sheet_id_by_sheet_name(sheet_name);
     let sheet_id = if let Ok(id) = result_sheet_id {
@@ -259,7 +259,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     } else {
         return web::Json(result_sheet_id.err().unwrap());
     };
-    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
+    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
     if new_sheet_elem.is_err() {
         return web::Json(Result::error(
             "Failed to update sheet".to_string(),
@@ -299,9 +299,9 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
 #[get("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership(argument.id.parse().unwrap(),
+    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
                                                            Ownership::Subscriber, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
@@ -312,7 +312,7 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.clone().id, 
+        optional_to_string(argument.clone().id),
         sheet_updates_payload 
     );
 
@@ -332,9 +332,9 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
 #[get("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership((argument.id).parse().unwrap(),
+    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
                                                            Ownership::Publisher, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
@@ -345,7 +345,7 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
-        argument.clone().id, // needs to be last taken ID
+        optional_to_string(argument.clone().id), // needs to be last taken ID
         sheet_updates_payload // map everything to Argument
     );
 
@@ -365,7 +365,7 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
 #[post("/api/v1/updateSubscription")]
 async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let sheet_id_result = get_sheet_id_by_sheet_name(sheet_name);
     let sheet_id = if let Ok(sheet_id) = sheet_id_result {
@@ -373,7 +373,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     } else {
       return web::Json(sheet_id_result.err().unwrap());
     };
-    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
+    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
     if new_sheet_elem.is_err() {
         let err_msg = new_sheet_elem.err().unwrap();
         return web::Json(Result::new(

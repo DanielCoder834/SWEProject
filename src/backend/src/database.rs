@@ -12,6 +12,7 @@ use crate::{results, schema};
 // Our Files
 use crate::publisher::*;
 use crate::publisher::Publisher;
+use crate::results::optional_to_string;
 use crate::schema::{publisher_sheets, sheets};
 use crate::schema::sheets::{title};
 use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
@@ -87,7 +88,7 @@ pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
 pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
                          publisher_name: &String,
                          sheet_name: &String,
-                         payload: String,
+                         payload: Option<String>,
                          ownership: Ownership)
                          -> RustResults<usize, Result> {
     // use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id};
@@ -115,7 +116,7 @@ pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
     let new_update = NewUpdates {
         owner_id: publisher.id,
         ownership,
-        update_value: payload,
+        update_value: optional_to_string(payload),
     };
 
     let insert_update_rest =

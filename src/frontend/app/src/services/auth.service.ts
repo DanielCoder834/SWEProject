@@ -1,17 +1,20 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:9443/api/";
+const API_URL = "https://localhost:9443/api/v1/";
 
 class AuthService {
   login(username: string, password: string) {
-    return axios.post(API_URL + "login", { username, password })
+    const basicAuth = 'Basic ' + btoa(username + ':' + password);
+    return axios.get(API_URL + "register", {
+      headers: {
+        'Authorization': basicAuth,
+        'Content-Type': 'application/json'
+      }
+    })
       .then(response => {
-        if (response.data.accessToken) {
-          localStorage.setItem("currentUser", JSON.stringify(response.data));
-        }
         return response.data;
       }).catch(error => {
-        console.error("Login error:", error.response ? error.response.data : 'No response');
+        console.error("Registration error:", error.response ? error.response.data : 'No response');
         throw error;
       });
   }
@@ -21,7 +24,13 @@ class AuthService {
   }
 
   register(username: string, password: string) {
-    return axios.post(API_URL + "register", { username, password })
+    const basicAuth = 'Basic ' + btoa(username + ':' + password);
+    return axios.get(API_URL + "register", {
+      headers: {
+        'Authorization': basicAuth,
+        'Content-Type': 'application/json'
+      }
+    })
       .then(response => {
         return response.data;
       }).catch(error => {

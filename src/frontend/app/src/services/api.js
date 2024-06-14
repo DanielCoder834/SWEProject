@@ -2,7 +2,7 @@ import axios from 'axios';
 import https from 'https';
 
 const api = axios.create({
-  baseURL: 'https://localhost:9443/api/v1',
+  baseURL: 'https://localhost:9443/api/v1/register',
   headers: {
     'Content-Type': 'application/json',
   },

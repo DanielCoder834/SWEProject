@@ -2,7 +2,8 @@ use diesel::{Identifiable, Insertable, Queryable, Selectable};
 use uuid::Uuid;
 use crate::schema::publishers;
 
-// Written by Daniel Kaplan
+
+// @author Daniel Kaplan
 #[derive(PartialEq, Hash, Eq, Debug, serde::Deserialize,
 Clone, Queryable, Selectable, Identifiable)]
 #[diesel(table_name = crate::schema::publishers)]
@@ -14,8 +15,9 @@ pub struct Publisher {
     pub password: String,
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 impl Publisher {
+    // @author Daniel Kaplan
     pub fn default() -> Self {
         Publisher {
             id: Uuid::new_v4(),
@@ -23,6 +25,7 @@ impl Publisher {
             password: "".to_string(),
         }
     }
+    // @author Daniel Kaplan
     pub fn new(username: String, password: String, id: Uuid) -> Self {
         Publisher {
             id,
@@ -37,7 +40,7 @@ impl Publisher {
 
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[derive(Insertable)]
 #[diesel(table_name = publishers)]
 #[diesel(primary_key(id))]

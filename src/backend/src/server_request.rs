@@ -1,20 +1,8 @@
-// Needeed Functions
-// Result getPublishers()
-// Result createSheet(Argument)
-// Result getSheets(Argument)
-// Result deleteSheet(Argument)
-// Result getUpdatesForSubscription(Argument)
-// Result getUpdatesForPublished(Argument)
-// Result updatePublished(Argument)
-// Result updateSubscription(Argument)
-
-
 // Third Party Libraries
 use std::path::Path;
 use actix_web::{get, HttpResponse, Responder, HttpRequest, post, web};
 use base64::prelude::*;
 use uuid::Uuid;
-// use diesel::row::NamedRow;
 
 // Our files/structs
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, password_and_username_in_db, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
@@ -22,14 +10,11 @@ use crate::results::*;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
 
-// Modules
-
 // Type Aliasing
 type RustResult<T, E> = std::result::Result<T, E>;
 
-
 /*
- * Written by Daniel Kaplan
+ *@author Daniel Kaplan
  * Simple: Registers a new user to the database
  * Pipeline from header element to username and password:
  * Header Elements { ..., Authentication: <base64 encoded string>, ... } ->
@@ -76,17 +61,12 @@ pub async fn register(
         Ok(v) => v,
     };
 
-    let auth_vector = if username_and_password_unwrapped.split(":").collect::<Vec<&str>>().len() >= 2 {
+    // Made changes here
+    let auth_vector = if username_and_password_unwrapped.split(":").collect::<Vec<&str>>().join("") != "" {
         username_and_password_unwrapped.split(":").collect::<Vec<&str>>()
     } else {
         return web::Json(Result::error("Username or password are not provided".to_string(), vec![]));
     };
-
-    // Additions to the database
-    if password_and_username_in_db(auth_vector[0],
-                                   auth_vector[1]) {
-        return web::Json(Result::error("Username or Password already exists".to_string(), vec![]));
-    }
 
     let result_cred_insert = insert_new_credentials(
         auth_vector[0],
@@ -107,7 +87,7 @@ pub async fn register(
     web::Json(successfull_result)
 }
 
-/* Written by Daniel Kaplan
+/* @author Daniel Kaplan
 - Gets all the publishers from the database
 - On success returns all publishers of newly created argument objects
 */
@@ -130,9 +110,8 @@ async fn getPublishers() -> impl Responder {
     web::Json(Result::new(true, "Successfully got all publishers".to_string(), all_publishers))
 }
 
-
-
-/* Written by Brooklyn Schmidt and Daniel Kaplan
+/* Pair-programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
 - Deserializes Argument Json Object
 - Gets the publisher from the database
 - Creates a new sheet and updates database
@@ -149,18 +128,18 @@ async fn createSheet(argument: web::Json<Argument>)
         result_publisher_of_sheet.unwrap()
     };
 
-    let sheet_title: &String = &argument.sheet;
+    let sheet_title: &String = &optional_to_string(argument.clone().sheet);
     let sheet_id = Uuid::new_v4();
     let new_sheet: New_Test_Sheet = New_Test_Sheet {
         title: sheet_title.clone(),
         id: sheet_id,
     };
 
-    let payload = &argument.payload;
+    let payload = optional_to_string(argument.clone().payload);
 
     // Initial Sheet Element
     let initial_sheet_element: Vec<NewSheetElem> = if payload.len() != 0 {
-        let result_decoding_sheet = decoded_sheet(payload, sheet_id);
+        let result_decoding_sheet = decoded_sheet(&payload, sheet_id);
         let new_sheet_element: Vec<NewSheetElem> = if result_decoding_sheet.is_ok() {
             result_decoding_sheet.unwrap()
         } else {
@@ -171,12 +150,8 @@ async fn createSheet(argument: web::Json<Argument>)
         };
         new_sheet_element
     } else {
-        // Add error handling for duplicate ids
         vec![NewSheetElem::default(sheet_id)]
     };
-
-    // let sheet_id =
-    // let payload: &String = &argument.payload;
 
     let insert_result = insert_sheet_relation_elem(
         &new_sheet,
@@ -194,13 +169,15 @@ async fn createSheet(argument: web::Json<Argument>)
 
     web::Json(successful_result)
 }
-//
-// /* Written by Brooklyn Schmidt and Daniel Kaplan
-// - Deserializes Argument Json Object
-// - Gets the publisher from the database
-// - Gets list of sheets that they have
-// */
-//
+
+
+/* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
+- Deserializes Argument Json Object
+- Gets the publisher from the database
+- Gets list of sheets that they have
+*/
+
 #[allow(non_snake_case)]
 #[post("/api/v1/getSheets")]
 async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
@@ -226,19 +203,19 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
     return web::Json(result);
 }
 
-//
-// /* Written by Brooklyn Schmidt and Daniel Kaplan
-// - Deserializes Json Object
-// - Retrieves list of sheets from given Publisher
-// - Deletes sheet of name "sheet" from vector
-// - Update database
-// */
-//
+/* Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+@author Daniel Kaplan
+- Deserializes Json Object
+- Retrieves list of sheets from given Publisher
+- Deletes sheet of name "sheet" from vector
+- Update database
+*/ 
+
 #[allow(non_snake_case)]
 #[post("/api/v1/deleteSheet")]
 async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let delete_sheet_result = delete_sheet_by_sheet_name_and_user(publisher_name, sheet_name);
 
@@ -258,15 +235,18 @@ async fn deleteSheet(argument: web::Json<Argument>) -> impl Responder {
 }
 
 
-// Written by Brooklyn Schmidt
-// Gets the provided argument's sheet and publisher
-// Decodes the payload into a new sheet element
-// Updates the sheet with the decoded payload
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Ensures validity of provided sheet ID and ownership type.
+// Retrieves all updated sheet elements from the provided payload
+// Updates sheet given Sheet ID
+// Returns a Message indicating how many elements were updated.
+
 #[allow(non_snake_case)]
 #[post("api/v1/updatePublished")]
 async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let result_sheet_id = get_sheet_id_by_sheet_name(sheet_name);
     let sheet_id = if let Ok(id) = result_sheet_id {
@@ -274,7 +254,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     } else {
         return web::Json(result_sheet_id.err().unwrap());
     };
-    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
+    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
     if new_sheet_elem.is_err() {
         return web::Json(Result::error(
             "Failed to update sheet".to_string(),
@@ -304,17 +284,19 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
-// Written by Brooklyn Schmidt
-// Retrieves list of updates for subscribers from database
-// Error handles
-// Returns argument object
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Retrieves list of updates given the Sheet ID and Ownership Type
+// Ensures validity of JSON Argument sent
+// Encodes those updates and sends them back in the payload
+
 #[allow(non_snake_case)]
-#[get("/api/v1/getUpdatesForSubscription")]
+#[post("/api/v1/getUpdatesForSubscription")]
 async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership(argument.id.parse().unwrap(),
+    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
                                                            Ownership::Subscriber, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
@@ -325,28 +307,28 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(), 
-        argument.clone().id, // needs to be last taken ID
-        sheet_updates_payload // map everything to Argument
+        optional_to_string(argument.clone().id),
+        sheet_updates_payload 
     );
 
-    let successfull_result: Result =
+    let successful_result: Result =
         Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
 
-    web::Json(successfull_result)
-
+    web::Json(successful_result)
 }
 
-// Written by Brooklyn Schmidt
-// Retrieves list of updates for publisher from database
-// Error handles
-// Returns argument object
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Retrieves list of updates given the Sheet ID and Ownership Type
+// Ensures validity of JSON Argument sent
+// Encodes those updates and sends them back in the payload
 #[allow(non_snake_case)]
-#[get("/api/v1/getUpdatesForPublished")]
+#[post("/api/v1/getUpdatesForPublished")]
 async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name : &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership((argument.id).parse().unwrap(),
+    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
                                                            Ownership::Publisher, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
@@ -357,7 +339,7 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
-        argument.clone().id, // needs to be last taken ID
+        optional_to_string(argument.clone().id), // needs to be last taken ID
         sheet_updates_payload // map everything to Argument
     );
 
@@ -367,15 +349,17 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     web::Json(successfull_result)
 }
 
-// Written by Brooklyn Schmidt
-// Gets the provided argument's sheet and publisher
-// Decodes the payload into a new sheet element
-// Updates the sheet with the decoded payload
+// Pair-Programmed by Daniel Kaplan and Brooklyn Schmidt
+// @author Brooklyn Schmidt
+// Ensures validity of provided sheet ID and ownership type.
+// Retrieves all updated sheet elements from the provided payload
+// Updates sheet given Sheet ID
+// Returns a Message indicating how many elements were updated.
 #[allow(non_snake_case)]
 #[post("/api/v1/updateSubscription")]
 async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let sheet_name: &String = &argument.sheet;
+    let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
     let sheet_id_result = get_sheet_id_by_sheet_name(sheet_name);
     let sheet_id = if let Ok(sheet_id) = sheet_id_result {
@@ -383,7 +367,8 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     } else {
       return web::Json(sheet_id_result.err().unwrap());
     };
-    let new_sheet_elem = decoded_sheet(&argument.payload, sheet_id);
+
+    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
     if new_sheet_elem.is_err() {
         let err_msg = new_sheet_elem.err().unwrap();
         return web::Json(Result::new(
@@ -410,7 +395,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
     web::Json(successful_result)
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
     println!("Pinged");
@@ -419,7 +404,7 @@ pub async fn ping() -> impl Responder {
     HttpResponse::Ok().body("pong")
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 // Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
 fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSheetElem>, String> {
     if !(*encoded_sheet).contains("$") {
@@ -438,7 +423,7 @@ fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSh
     sheet_elem_vec
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
     let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
     let values_length = values.len();
@@ -488,7 +473,7 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
     })
 }
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 fn encoding_updates(updates: Vec<Updates>) -> String {
     updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

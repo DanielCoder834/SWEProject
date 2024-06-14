@@ -28,7 +28,7 @@ use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, u
 pub const MIGRATION: EmbeddedMigrations = embed_migrations!("./migrations");
 
 
-// Written by Daniel Kaplan
+// @author Daniel Kaplan
 async fn do_auth(
     req: ServiceRequest,
     creds: BasicAuth,
@@ -48,7 +48,8 @@ async fn do_auth(
     }
 }
 
-// Written by Daniel Kaplan
+
+// @author Daniel Kaplan
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let conn = &mut establish_connection();
@@ -61,9 +62,10 @@ async fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
         dotenv().ok();
+        dbg!(&env::var("CORS_URL").unwrap());
 
         let cors = Cors::default()
-            .allowed_origin("http://localhost:3000")  // Allow your frontend URL
+            .allowed_origin("http://localhost:3000")
             .allowed_origin(&env::var("CORS_URL").unwrap())
             .allowed_origin_fn(|origin, _req_head| {
                 origin.as_bytes().ends_with(env::var("CORS_ENDING_URL").unwrap().as_bytes())

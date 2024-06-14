@@ -1,4 +1,4 @@
-version: '3.8'
+version: '4.3'
 
 services:
   postgres:
@@ -19,14 +19,14 @@ services:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
-    container_name: server
+    container_name: servers
     ports:
       - '9443:9443'
     depends_on:
       - postgres
     environment:
       DATABASE_URL: postgres://postgres:password@postgres:5432/SWEDatabase
-      CORS_URL: https://localhost:9443
+      CORS_URL: http://localhost:3000
       CORS_ENDING_URL: /api/v1
 
 volumes:

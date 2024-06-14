@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import axios from 'axios';
+import AuthService from "../services/auth.service";
 
 type TopMenuProps = {
   onCreateSpreadsheet: (rows: number, columns: number, title: string) => void;
@@ -8,13 +10,17 @@ type TopMenuProps = {
 };
 
 const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
+
+  const API_URL = "https://localhost:9443/api/v1/";
   const [showFileMenu, setShowFileMenu] = useState(false);
+  const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<string>("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [publishers, setPublishers] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [sheets, setSheets] = useState<string[]>([]); 
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSheetModal, setShowSheetModal] = useState(false);
   const [showOpenModal, setShowOpenModal] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -37,20 +43,16 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Fetches publishers from API 
   const fetchPublishers = async () => {
     try {
-      const response = await fetch("https://localhost:9443/api/v1/getPublishers", {
-        method: "GET"
-      });
-      if (response.ok) {
-        const data = await response.json();
-
-        // Checks Result struct success field
-        if (data.success) {
-          const publishers : string[]  = data.value.map((item: { publisher: string; }) => item.publisher);
+      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const response = await axios.get(API_URL + "getPublishers", {
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/json'
+        }
+      })
+      if (response.status === 200) {
+          const publishers : string[]  = response.data.value.map((item: { publisher: string; }) => item.publisher);
           setPublishers(publishers);
-        }
-        else {
-          console.error("API call failed");
-        }
       } else {
         console.error("Failed to fetch publishers");
       }
@@ -65,26 +67,24 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Parameter is of type Argument, with the publisher field set to the selected user from the User dropdown.
   const fetchSheets = async () => {
     try {
-      const argument = {
-        publisher: selectedUser,
-        sheet: "",
-        id: "",
-        payload: ""
-      } 
-      const response = await fetch("https://localhost:9443/api/v1/getSheets", {
-        method: "POST",
-        body: JSON.stringify({argument})
-      });
-      if (response.ok) {
-        const data = await response.json();
-
-        if (data.success) {
-          // Retrieves the sheet from each List of Argument
-          const sheets : string[] = data.value.map((item: {sheet: string;}) => item.sheet);
-          setSheets(sheets);
+      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const response = await axios.post(API_URL + "getSheets", {
+          publisher: selectedUser,
+          sheet: "",
+          id: "",
+          payload: ""
+      },{
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/json'
         }
-        else {
-          console.error("API fetch failed");
+      })
+      if (response.status === 200) {
+        if (response.data.value === null) {
+          setSheets([""]);
+        } else {
+          const sheets : string[] = response.data.value.map((item: {sheet: string;}) => item.sheet);
+          setSheets(sheets);
         }
       } else {
         console.error("Failed to fetch sheets");
@@ -98,26 +98,24 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Fetches the createSheet call from the API
   // Parameter is the name of the sheet the user wants to create
   // Creates a sheet for the User logged in
+
   const fetchCreate = async (sheetName: string) =>  {
     try {
-      const argument =  {
-        publisher: currentUser,
-        sheet: sheetName,
-        id: "",
-        payload: ""
-      }
-
-      const response = await fetch("https://localhost:9443/api/v1/createSheet",
-        {
-          method: "POST",
-          body: JSON.stringify(argument)
+      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const response = await axios.post(API_URL + "createSheet", {
+          publisher: "user3", // fix this for current logged in user
+          sheet: sheetName,
+          id: "",
+          payload: ""
+      }, {
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/json'
         }
-      );
+      })
 
-      if (response.ok) {
-        const data = await response.json();
-
-        if (!data.success) {
+      if (response.status === 200) {
+        if (!response.data.success) {
           console.error("Couldn't create a sheet");
         }
       }
@@ -133,24 +131,21 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Deletes a sheet from the currently logged in user.
   const fetchDelete = async (sheetName: string) => {
     try {
-      const argument =  {
-        publisher: currentUser, // fix
-        sheet: sheetName,
-        id: "",
-        payload: ""
-      }
-
-      const response = await fetch("https://localhost:9443/api/v1/deleteSheet",
-        {
-          method: "POST",
-          body: JSON.stringify(argument)
+      const basicAuth = 'Basic ' + btoa("user1" + ':' + "pass");
+      const response = await axios.post(API_URL + "deleteSheet", {
+          publisher: "user3", // fix this for current logged in user
+          sheet: sheetName,
+          id: "",
+          payload: ""
+      }, {
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/json'
         }
-      );
+      })
 
-      if (response.ok) {
-        const data = await response.json();
-
-        if (!data.success) {
+      if (response.status === 200) {
+        if (!response.data.success) {
           console.error("Couldn't create a sheet");
         }
       }
@@ -160,13 +155,19 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   }
 
+
   const handleFileClick = () => {
     setShowFileMenu(!showFileMenu);
+    console.log("Menu is set");
   };
 
   const handleUserClick = () => {
     setShowUserMenu(!showUserMenu);
   };
+
+  const handleSheetClick = () => {
+    setShowSheetModal(true);
+  }
 
   const handleCreateClick = () => {
     setShowCreateModal(true);
@@ -190,6 +191,12 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // When a user selects a user from the list of users, sets the selected user variable to that.
   const handleSaveSelectedUser = (user: string) => {
     setSelectedUser(user);
+  }
+
+  // @author Brooklyn Schmidt
+  // When a user selects a sheet from the list of sheets, sets the selected sheet.
+  const handleSaveSelectedSheet = (sheet: string) => {
+    setSelectedSheet(sheet);
   }
 
 
@@ -243,29 +250,50 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         {/* @author Brooklyn Schmidt
         Maps the list of publishers to the User dropdown
         Handles the selected user in the dropdown and fetches the sheets of that user */}
-        <div className="dropdown-users">
-        <button onClick={handleUserClick}>Users</button>
-        {showUserMenu && (
-          <ul className="dropdown-content">
-          {publishers.map((publisher, index) => (
-            <li key={index} onClick={() => {handleSaveSelectedUser(publisher);
-              fetchSheets();
-            }}>{publisher}</li>
-          ))}
-          </ul>
-        )}
-        </div>
-        <div className="dropdown-sheets">
-          <button onClick={handleUserClick}>Sheets</button>
-          {showUserMenu &&
-            <ul className="dropdown-content-sheets">
-              {sheets.map((sheet, index) => (
-                <li key={index} onClick={() => handleUserClick()}>{sheet}</li>
-              ))}
+        <div className="dropdown">
+          <button onClick={handleUserClick}>Users</button>
+          {showUserMenu && (
+            <ul className="dropdown-content">
+            {publishers.map((publisher, index) => (
+              <li key={index} onClick={() => {handleSaveSelectedUser(publisher);
+                fetchSheets();
+                handleSheetClick();
+              }}>{publisher}</li>
+            ))}
             </ul>
-          } 
+          )}
         </div>
       </div>
+
+      {showSheetModal && (
+        <div className="modal-backdrop">
+        <div className="form-container">
+          <h2>{selectedUser}'s sheets</h2>
+        <Formik
+          initialValues={createForm}
+          validationSchema={validationSchema}
+          onSubmit={handleCreateSubmit}
+           >
+             {({ errors, touched }) => (
+               <Form>
+                <div>
+                  <label>Select Sheet</label>
+                  <Field name="selectedSheet" as="select">
+                    {sheets.map(sheet => (
+                    <option key={sheet} value={sheet}>
+                      {sheet}
+                    </option>
+                  ))}
+                  </Field>
+                </div>
+                 <button type="submit">Enter</button>
+                 <button type="button" onClick={() => setShowSheetModal(false)}>Cancel</button>
+               </Form>
+             )}
+           </Formik>
+         </div>
+       </div>
+     )}
 
       {showCreateModal && (
         <div className="modal-backdrop">

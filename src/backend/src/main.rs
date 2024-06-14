@@ -64,6 +64,7 @@ async fn main() -> std::io::Result<()> {
         dotenv().ok();
 
         let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
             .allowed_origin(&env::var("CORS_URL").unwrap())
             .allowed_origin_fn(|origin, _req_head| {
                 origin.as_bytes().ends_with(env::var("CORS_ENDING_URL").unwrap().as_bytes())

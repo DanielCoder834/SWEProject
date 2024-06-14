@@ -14,8 +14,8 @@ type TopMenuProps = {
 const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   const API_URL = "https://localhost:9443/api/v1/";
   const [showFileMenu, setShowFileMenu] = useState(false);
-  const [selectedSheet, setSelectedSheet] = useState<string>("");
   const [currentUser, setCurrentUser] = useState("");
+  const [currentPass, setCurrentPass] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [publishers, setPublishers] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
@@ -44,17 +44,27 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   }, []);
 
+  useEffect(() => {
+    const passString = localStorage.getItem('currentPassword'); // This can be string or null
+    if (passString) {
+      const pass = JSON.parse(passString); // Safely parse if not null
+      if (pass && pass.password) {
+        setCurrentPass(pass.password);
+      }
+    }
+  }, []);
+
   // @author Brooklyn Schmidt
   // Fetches the publishers when the component mounts.
   useEffect(() => {
     fetchPublishers();
-  }, []);
+  });
 
   // @author Brooklyn Schmidt
   // Fetches publishers from API 
   const fetchPublishers = async () => {
     try {
-      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
       const response = await axios.get(API_URL + "getPublishers", {
         headers: {
           'Authorization': basicAuth,
@@ -78,7 +88,7 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Parameter is of type Argument, with the publisher field set to the selected user from the User dropdown.
   const fetchSheets = async () => {
     try {
-      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
       const response = await axios.post(API_URL + "getSheets", {
           publisher: selectedUser,
           sheet: "",
@@ -112,9 +122,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
 
   const fetchCreate = async (sheetName: string) =>  {
     try {
-      const basicAuth = 'Basic ' + btoa("user3" + ':' + "pass");
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
       const response = await axios.post(API_URL + "createSheet", {
-          publisher: "user3", // fix this for current logged in user
+          publisher: currentUser,
           sheet: sheetName,
           id: "",
           payload: ""
@@ -142,9 +152,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   // Deletes a sheet from the currently logged in user.
   const fetchDelete = async (sheetName: string) => {
     try {
-      const basicAuth = 'Basic ' + btoa("user1" + ':' + "pass");
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
       const response = await axios.post(API_URL + "deleteSheet", {
-          publisher: "user3", // fix this for current logged in user
+          publisher: currentUser,
           sheet: sheetName,
           id: "",
           payload: ""
@@ -166,6 +176,118 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   }
 
+  
+  // @author Brooklyn Schmidt
+  // Fetches the updatePublisher call from the API
+  // Parameter is the owner of the sheet, the sheet to update, and the list of updates
+  // Updates the current sheet to the database
+ const fetchUpdatePublisher = async (owner: string, sheetName: string, updates: string) => {
+  try {
+    const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
+    const response = await axios.post(API_URL + "updatePublisher", {
+      publisher: owner,
+      sheet: sheetName,
+      id: "",
+      payload: updates, // ENTER PARSER CODE
+    }, {
+    headers: {
+      'Authorization': basicAuth,
+      'Content-Type': 'application/json'
+    }
+  })
+
+      if (response.status === 200) {
+        if (!response.data.success) {
+          console.error("Couldn't update sheet");
+        } 
+      }
+    }
+    catch (error) {
+      console.error("API Failed");
+    }
+  } 
+
+  // @author Brooklyn Schmidt
+  // Fetches the updateSubscriber call from the API
+  // Parameter is the owner of the sheet, the sheet to update, and the list of updates
+  // Updates the current sheet to the database
+  const fetchUpdateSubscriber = async (owner: string, sheetName: string, updates: string) => {
+    try {
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
+      const response = await axios.post(API_URL + "updateSubscription", {
+        publisher: owner,
+        sheet: sheetName,
+        id: "",
+        payload: updates, // ENTER PARSER CODE
+      }, {
+      headers: {
+        'Authorization': basicAuth,
+        'Content-Type': 'application/json'
+      }
+    })
+  
+        if (response.status === 200) {
+          if (!response.data.success) {
+            console.error("Couldn't update sheet");
+          } 
+        }
+      }
+      catch (error) {
+        console.error("API Failed");
+      }
+    } 
+  
+  const fetchGetUpdatesForPublished = async (owner: string, sheetName: string, update_id: string) => {
+    try {
+      const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
+      const response = await axios.post(API_URL + "getUpdatesForPublished", {
+        publisher: owner,
+        sheet: sheetName,
+        id: update_id, // enter ID 
+        payload: "", 
+      }, {
+      headers: {
+        'Authorization': basicAuth,
+        'Content-Type': 'application/json'
+      }
+    })
+  
+        if (response.status === 200) {
+          if (!response.data.success) {
+            console.error("Couldn't retrieve update sheet");
+          } 
+        }
+      }
+      catch (error) {
+        console.error("API Failed");
+      }
+    } 
+
+    const fetchGetUpdatesForSubscription = async (owner: string, sheetName: string, update_id: string) => {
+      try {
+        const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
+        const response = await axios.post(API_URL + "getUpdatesForSubscription", {
+          publisher: owner,
+          sheet: sheetName,
+          id: update_id, // enter ID 
+          payload: "", 
+        }, {
+        headers: {
+          'Authorization': basicAuth,
+          'Content-Type': 'application/json'
+        }
+      })
+    
+          if (response.status === 200) {
+            if (!response.data.success) {
+              console.error("Couldn't retrieve update sheet");
+            } 
+          }
+        }
+        catch (error) {
+          console.error("API Failed");
+        }
+      } 
 
   const handleFileClick = () => {
     setShowFileMenu(!showFileMenu);
@@ -200,16 +322,16 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
 
   // @author Brooklyn Schmidt
   // When a user selects a user from the list of users, sets the selected user variable to that.
-  const handleSaveSelectedUser = (user: string) => {
+  const handleSaveSelectedUser = async (user: string) => {
+    // Set the selected user
     setSelectedUser(user);
-  }
-
-  // @author Brooklyn Schmidt
-  // When a user selects a sheet from the list of sheets, sets the selected sheet.
-  const handleSaveSelectedSheet = (sheet: string) => {
-    setSelectedSheet(sheet);
-  }
-
+    
+    // Wait for the selectedUser state to be updated before fetching sheets
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Fetch sheets for the selected user
+    fetchSheets();
+  };
 
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required!"),
@@ -240,6 +362,15 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     fetchDelete(values.filename);
     setShowDeleteModal(false);
   }
+
+  const handleSheetSubmit = (values: {filename: string}) => {
+     console.log("Switching to sheet");
+     if (selectedUser != currentUser) {
+      fetchGetUpdatesForSubscription(selectedUser, values.filename, "0"); // use ID correctly
+     } else {
+      fetchGetUpdatesForPublished(currentUser, values.filename, "0");
+     }
+   }
 
   return (
     <div className="top-menu">
@@ -272,7 +403,6 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
             <ul className="dropdown-content">
             {publishers.map((publisher, index) => (
               <li key={index} onClick={() => {handleSaveSelectedUser(publisher);
-                fetchSheets();
                 handleSheetClick();
               }}>{publisher}</li>
             ))}
@@ -286,9 +416,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         <div className="form-container">
           <h2>{selectedUser}'s sheets</h2>
         <Formik
-          initialValues={createForm}
+          initialValues={fileForm}
           validationSchema={validationSchema}
-          onSubmit={handleCreateSubmit}
+          onSubmit={handleSheetSubmit}
            >
              {({ errors, touched }) => (
                <Form>

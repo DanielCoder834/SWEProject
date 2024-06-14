@@ -62,6 +62,7 @@ async fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
         dotenv().ok();
+        dbg!(&env::var("CORS_URL").unwrap());
 
         let cors = Cors::default()
             .allowed_origin("http://localhost:3000")

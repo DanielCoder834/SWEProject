@@ -1,4 +1,4 @@
-pub use crate::server_request::{register, ping};
+pub use crate::server_request::*;
 //
 pub mod server_request;
 //

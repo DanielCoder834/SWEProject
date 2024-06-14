@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct Result {
     pub success: bool,
-    message: Option<String>,
-    value: Option<Vec<Argument>>,
+    pub message: Option<String>,
+    pub value: Option<Vec<Argument>>,
 }
 
 impl Result {
@@ -73,5 +73,13 @@ pub fn vector_to_optional<T>(vec: Vec<T>) -> Option<Vec<T>> {
         None
     } else {
         Some(vec)
+    }
+}
+
+pub fn optional_to_vector<T>(vec: Option<Vec<T>>) -> Vec<T> {
+    if let Some(value) = vec {
+        value
+    } else {
+        vec![]
     }
 }

@@ -68,12 +68,6 @@ pub async fn register(
         return web::Json(Result::error("Username or password are not provided".to_string(), vec![]));
     };
 
-    // Additions to the database
-    if password_and_username_in_db(auth_vector[0],
-                                   auth_vector[1]) {
-        return web::Json(Result::error("Username or Password already exists".to_string(), vec![]));
-    }
-
     let result_cred_insert = insert_new_credentials(
         auth_vector[0],
         auth_vector[1],

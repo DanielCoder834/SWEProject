@@ -7,6 +7,7 @@ use uuid::Uuid;
 // Our files/structs
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
 use crate::results::*;
+// use crate::schema::sheet_elems::sheet_id;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
 use crate::updates::{Ownership, Updates};
 
@@ -297,8 +298,13 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
-                                                           Ownership::Subscriber, publisher_name, sheet_name);
+    let sheet_id = if let Ok(id) = optional_to_string(argument.clone().id).parse::<i32>() {
+        id
+    } else {
+        return web::Json(Result::error("Could not Parse Id".to_string(), vec![argument.into_inner()]));
+    };
+    let list_of_updates = find_updates_by_id_and_ownership(sheet_id,
+                                                           Ownership::Publisher, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
         return web::Json(Result::error("Failed to send updates".to_string(), vec![]));
@@ -329,7 +335,12 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     let publisher_name: &String = &argument.publisher;
     let sheet_name: &String = &optional_to_string(argument.clone().sheet);
 
-    let list_of_updates = find_updates_by_id_and_ownership(optional_to_string(argument.clone().id).parse().unwrap(),
+    let sheet_id = if let Ok(id) = optional_to_string(argument.clone().id).parse::<i32>() {
+        id
+    } else {
+        return web::Json(Result::error("Could not Parse Id".to_string(), vec![argument.into_inner()]));
+    };
+    let list_of_updates = find_updates_by_id_and_ownership(sheet_id,
                                                            Ownership::Publisher, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {

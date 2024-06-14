@@ -5,13 +5,15 @@ mod tests {
     use actix_web::body::BoxBody;
     use actix_web::dev::{HttpServiceFactory, Service, ServiceResponse};
     use actix_web::http::header;
-    use libs::server_request::{register, ping, getPublishers, createSheet, getSheets, deleteSheet};
+    use libs::server_request::
+    {register, ping, getPublishers, createSheet, getSheets, deleteSheet};
     use libs::results::{Argument, optional_to_string, Result, optional_to_vector};
     use base64::prelude::*;
     use libs::do_auth;
     use actix_web_httpauth::headers::authorization::Basic;
     use actix_http::Request;
     use actix_web_httpauth::middleware::HttpAuthentication;
+    use diesel::dsl::Update;
     use uuid::Uuid;
     use libs::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
 
@@ -86,7 +88,6 @@ mod tests {
         let publisher = Uuid::new_v4().to_string();
         let _sheet_name = Uuid::new_v4().to_string();
         let auth = Basic::new(publisher.clone(), Some("pass"));
-        dbg!(auth.clone());
 
         let req_register = test::TestRequest::get().uri("/api/v1/register")
             .insert_header((
@@ -436,6 +437,7 @@ mod tests {
                 Error Msg: Could not parse to integer".to_string())
     }
 
+    // @author Daniel Kaplan
     #[actix_web::test]
     async fn delete_non_existent_sheet() {
         let app = test::init_service(App::new()
@@ -453,8 +455,71 @@ mod tests {
 
         let arg = Argument::new(publisher, sheet_name, "".to_string(), "".to_string());
         let resp_delete_sheets: Result = post_route_result_with_auth("/api/v1/deleteSheet", &app, auth, arg).await;
-        assert!(!resp_delete_sheets.success)
+        assert!(resp_delete_sheets.success)
     }
+
+    // @author Daniel Kaplan
+    #[actix_web::test]
+    async fn invalid_id_get_updates_publisher() {
+        let app = test::init_service(App::new()
+            .service(register)
+            .service(createSheet)
+            .service(updatePublished)
+            .service(getUpdatesForPublished)).await;
+
+        // Registering a new user
+        let publisher = Uuid::new_v4().to_string();
+        let sheet_name = Uuid::new_v4().to_string();
+        let auth = &Basic::new(publisher.clone(), Some("pass"));
+        let _resp_register: Result = get_route_result_with_auth(
+            "/api/v1/register",
+            &app,
+            auth).await;
+
+        let payload = "$A0\nValue".to_string();
+
+        let arg = Argument::new(publisher, sheet_name, " ".to_string(), payload);
+        let _resp_create_sheet: Result = post_route_result_with_auth("/api/v1/createSheet", &app, &auth.clone(), arg.clone()).await;
+
+        let _resp_update_publisher: Result = post_route_result_with_auth("/api/v1/updatePublished", &app, &auth.clone(), arg.clone()).await;
+
+        let resp_get_update_publisher: Result = post_route_result_with_auth("/api/v1/getUpdatesForPublished", &app, auth, arg).await;
+        // dbg!(resp_get_update_subscription.clone());
+        assert!(!resp_get_update_publisher.success)
+    }
+
+    // @author Daniel Kaplan
+    #[actix_web::test]
+    async fn invalid_id_get_updates_subscriber() {
+        let app = test::init_service(App::new()
+            .service(register)
+            .service(createSheet)
+            .service(updateSubscription)
+            .service(getUpdatesForSubscription)).await;
+
+        // Registering a new user
+        let publisher = Uuid::new_v4().to_string();
+        let sheet_name = Uuid::new_v4().to_string();
+        let auth = &Basic::new(publisher.clone(), Some("pass"));
+        let _resp_register: Result = get_route_result_with_auth(
+            "/api/v1/register",
+            &app,
+            auth).await;
+
+        let payload = "$A0\nValue".to_string();
+
+        let arg = Argument::new(publisher, sheet_name, " ".to_string(), payload);
+        let _resp_create_sheet: Result = post_route_result_with_auth("/api/v1/createSheet", &app, &auth.clone(), arg.clone()).await;
+
+        let _resp_update_subscription: Result = post_route_result_with_auth("/api/v1/updateSubscription", &app, &auth.clone(), arg.clone()).await;
+
+        let resp_get_update_subscription: Result = post_route_result_with_auth("/api/v1/getUpdatesForSubscription", &app, auth, arg).await;
+
+        assert!(!resp_get_update_subscription.success &&
+        resp_get_update_subscription.message.unwrap_or_else(|| "".to_string())
+        == "Could not Parse Id".to_string())
+    }
+
 
 
     /// @author Daniel Kaplan

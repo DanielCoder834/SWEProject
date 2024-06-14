@@ -66,7 +66,7 @@ impl SheetElem {
 }
 
 // @author Daniel Kaplan
-#[derive(Insertable, Debug)]
+#[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = crate::schema::sheet_elems)]
 #[diesel(primary_key(id))]
 pub struct NewSheetElem {

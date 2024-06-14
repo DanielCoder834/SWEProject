@@ -76,6 +76,7 @@ pub fn vector_to_optional<T>(vec: Vec<T>) -> Option<Vec<T>> {
     }
 }
 
+// @author Daniel Kaplan
 pub fn optional_to_vector<T>(vec: Option<Vec<T>>) -> Vec<T> {
     if let Some(value) = vec {
         value

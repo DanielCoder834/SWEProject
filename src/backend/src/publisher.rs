@@ -33,11 +33,6 @@ impl Publisher {
             password,
         }
     }
-
-    pub fn get_username(&self) -> &String {
-        &self.username
-    }
-
 }
 
 // @author Daniel Kaplan

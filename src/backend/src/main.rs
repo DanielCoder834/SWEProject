@@ -4,10 +4,8 @@ use diesel_migrations::{embed_migrations, MigrationHarness};
 use std::env;
 use actix_cors::Cors;
 // Library Imports
-use actix_web::{
-    dev::ServiceRequest, error::ErrorUnauthorized, web, App, Error as ActixError, HttpServer,
-};
-use actix_web_httpauth::{extractors::basic::BasicAuth, middleware::HttpAuthentication};
+use actix_web::{web, App, HttpServer};
+use actix_web_httpauth::{middleware::HttpAuthentication};
 use dotenv::dotenv;
 use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
@@ -19,34 +17,15 @@ mod results;
 mod schema;
 mod sheet;
 mod updates;
+mod auth;
 
 // Our File Functions/Structs
 use server_request::{ping, register, createSheet, deleteSheet, getSheets, getPublishers};
-use database::{password_and_username_in_db, establish_connection};
+use database::{establish_connection};
 use crate::server_request::{getUpdatesForPublished, getUpdatesForSubscription, updatePublished, updateSubscription};
+use auth::do_auth;
 
 pub const MIGRATION: EmbeddedMigrations = embed_migrations!("./migrations");
-
-
-// @author Daniel Kaplan
-async fn do_auth(
-    req: ServiceRequest,
-    creds: BasicAuth,
-) -> Result<ServiceRequest, (ActixError, ServiceRequest)> {
-    let password = if creds.password().is_some() {
-        creds.password().unwrap()
-    } else {
-        return Err((ErrorUnauthorized("Error on optional unwrap of password. Eg.\
-         No password provided"), req));
-    };
-    if password_and_username_in_db(
-            creds.user_id(),
-            password) {
-        Ok(req)
-    } else {
-        Err((ErrorUnauthorized("Not Authorized"), req))
-    }
-}
 
 
 // @author Daniel Kaplan
@@ -62,7 +41,6 @@ async fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file("cert.pem").unwrap();
     HttpServer::new(|| {
         dotenv().ok();
-        dbg!(&env::var("CORS_URL").unwrap());
 
         let cors = Cors::default()
             .allowed_origin("http://localhost:3000")

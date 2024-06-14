@@ -48,13 +48,14 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     };
 
     const evaluateOperation = (node: ASTNode, context?: any): any => {
+        console.log("Evaluating node type:", node.type);  // Debug output
         if (!node) return "ERROR: Empty node";
     
         switch (node.type) {
             case "Number":
                 const numberNode = node as NumberNode;
                 return numberNode.value;
-            case "BinaryOperation":
+            case "BasicOperation":
                 const binaryNode = node as BasicOperationNode;
                 const left = evaluateOperation(binaryNode.left, context);
                 const right = evaluateOperation(binaryNode.right, context);
@@ -73,10 +74,10 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
                     default:
                         return "ERROR: Unsupported operator";
                 }
-            case "CellReference":
+            case "Reference":
                 const cellNode = node as ReferenceNode;
                 return evaluateCell(cellNode.reference, context);
-            case "FunctionCall":
+            case "Function":
                 const functionNode = node as FunctionNode;
                 const args = functionNode.arguments.map(arg => evaluateOperation(arg, context));
                 return executeFunction(functionNode.functionName, args);

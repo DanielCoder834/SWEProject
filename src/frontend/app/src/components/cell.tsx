@@ -1,7 +1,10 @@
+// @author Alvin Wong
 import React from "react";
-import Parser, { Token } from "./parser";
 import { useState } from "react";
- 
+import { Parser } from "./parser1";  // Ensure this import is correct
+import { Tokenize } from "./tokenize";
+import { ASTNode, NumberNode, BasicOperationNode, FunctionNode, ReferenceNode, StringNode } from "./astnodes";
+
 // Type definitions for the props
 type CellProps = {
     row: number;
@@ -11,169 +14,105 @@ type CellProps = {
         setGridData: (newData: string[][]) => void;
     };
 };
- 
- 
-// Represents a single cell in a spreadsheet.
- 
+
 const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     const { gridData, setGridData } = data;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newData = e.target.value;
-    
+        updateCell(newData); // Update the cell immediately with entered data
+
         if (newData.startsWith("=")) {
             const expression = newData.substring(1).trim();
-            if (!expression) {
-                updateCell("ERROR: No expression provided");
-                return;
+            try {
+                const tokenizer = new Tokenize(expression);
+                const tokens = tokenizer.tokenize(); // Tokenize the expression
+                const parser = new Parser(tokens); // Initialize the parser with tokens
+                const ast = parser.parse(); // Parse the tokens to AST
+                const result = evaluateOperation(ast); // Evaluate the AST
+                updateCell(result.toString()); // Update the cell with the result of the evaluation
+            } catch (error) {
+                if (error instanceof Error) {
+                    updateCell("ERROR: " + error.message);
+                } else {
+                    updateCell("ERROR: An unexpected error occurred");
+                }
             }
-    
-            const parser = new Parser(expression);
-            const tokens = parser.getTokens();
-    
-            if (!tokens.length) {
-                updateCell("ERROR: Invalid tokens");
-                return;
-            }
-    
-            const result = evaluateOperation(tokens);
-            updateCell(result.toString());
-        } else {
-            updateCell(newData);
         }
     };
-    
- 
+
     const updateCell = (val: string) => {
         const newData = [...gridData];
         newData[row][col] = val;
         setGridData(newData);
     };
- 
-    const evaluateOperation = (tokens: Token[]) => {
-        if (tokens.length < 3) {
-            console.error("Not enough tokens for operation");
-            return "ERROR";
-        }
+
+    const evaluateOperation = (node: ASTNode, context?: any): any => {
+        if (!node) return "ERROR: Empty node";
     
-        const [x, op, y] = tokens;
-    
-        // Ensure all necessary tokens are present and of correct type
-        if (!op || !x || !y || op.type !== "OPERATOR" || x.type !== "NUMBER" || y.type !== "NUMBER") {
-            console.error("Invalid tokens or types", { x, op, y });
-            return "ERROR";
-        }
-    
-        const numX = parseFloat(x.val);
-        const numY = parseFloat(y.val);
-    
-        if (isNaN(numX) || isNaN(numY)) {
-            console.error(`Invalid number conversion: numX=${numX}, numY=${numY}`);
-            return "ERROR: Invalid numbers";
-        }
-    
-        // Perform operations based on operator
-        switch (op.val) {
-            case "+":
-                return numX + numY;
-            case "-":
-                return numX - numY;
-            case "*":
-                return numX * numY;
-            case "/":
-                if (numY === 0) {
-                    return "ERROR: Division by zero";
+        switch (node.type) {
+            case "Number":
+                const numberNode = node as NumberNode;
+                return numberNode.value;
+            case "BinaryOperation":
+                const binaryNode = node as BasicOperationNode;
+                const left = evaluateOperation(binaryNode.left, context);
+                const right = evaluateOperation(binaryNode.right, context);
+                if (isNaN(left) || isNaN(right)) {
+                    return "ERROR: Invalid operation";
                 }
-                return numX / numY;
+                switch (binaryNode.operator) {
+                    case "+":
+                        return left + right;
+                    case "-":
+                        return left - right;
+                    case "*":
+                        return left * right;
+                    case "/":
+                        return right !== 0 ? left / right : "ERROR: Division by zero";
+                    default:
+                        return "ERROR: Unsupported operator";
+                }
+            case "CellReference":
+                const cellNode = node as ReferenceNode;
+                return evaluateCell(cellNode.reference, context);
+            case "FunctionCall":
+                const functionNode = node as FunctionNode;
+                const args = functionNode.arguments.map(arg => evaluateOperation(arg, context));
+                return executeFunction(functionNode.functionName, args);
+            case "String":
+                const stringNode = node as StringNode;
+                return stringNode.value;
             default:
-                console.error("Unsupported operator", op.val);
-                return "ERROR: Unsupported operator";
+                return "ERROR: Unknown node type";
         }
     };
     
-    
- 
-    // Checks if an input is a valid REF.
-    const isRef = (val: Token) => {
-        return /\$[A-Za-z]+[1-9]\d*/.test(val.val);
-    };
- 
-    // Checks if input REF x comes before input REF y.
-    const compareRefs = (x: Token, y: Token): number => {
-        const col1Match = x.val.match(/[A-Za-z]+/);
-        const row1Match = x.val.match(/\d+/);
-        const col2Match = y.val.match(/[A-Za-z]+/);
-        const row2Match = y.val.match(/\d+/);
-    
-        if (!col1Match || !row1Match || !col2Match || !row2Match) {
-            return 0; // Return 0 or throw an error if regex matching fails
+    // @author Adarsh Jayaram 
+    const evaluateCell = (reference: string, context: any): any => {
+        if (!context || !context.getCell) {
+            return "ERROR: Context or getCell method not provided";
         }
-    
-        const [col1] = col1Match;
-        const [col2] = col2Match;
-        const row1 = parseInt(row1Match[0], 10);
-        const row2 = parseInt(row2Match[0], 10);
-    
-        if (col1 === col2) {
-            return row1 - row2;
+        const cellValue = context.getCell(reference); // Retrieve the cell value from the spreadsheet
+        if (cellValue && typeof cellValue === 'object' && 'type' in cellValue) {
+            return evaluateOperation(cellValue, context); // Recursively evaluate if the cell contains a formula
         }
-    
-        return col1.localeCompare(col2);
+        return cellValue; // Return the value directly if it's a number or string
     };
- 
-    const evaluateFunction = (tokens: Token[]) => {
-        if (tokens.length < 3) return "ERROR"; // Ensure there are enough tokens
     
-        const [x, op, y] = tokens;
-    
-        if (!op || !x || !y) return "ERROR"; // Check if any tokens are undefined
-    
-        switch (op.val) {
-            case "+":
-                return typeof x === "number" && typeof y === "number" ? x + y : "ERROR";
-            case "-":
-                return typeof x === "number" && typeof y === "number" ? x - y : "ERROR";
-            case "*":
-                return typeof x === "number" && typeof y === "number" ? x * y : "ERROR";
-            case "/":
-                return typeof x === "number" && typeof y === "number" && y !== 0 ? x / y : "ERROR";
-            case "<":
-                return typeof x === "number" && typeof y === "number" ? (x < y ? 1 : 0) : "ERROR";
-            case ">":
-                return typeof x === "number" && typeof y === "number" ? (x > y ? 1 : 0) : "ERROR";
-            case "=":
-                if (typeof x === "number" && typeof y === "number") {
-                    return x === y ? 1 : 0;
-                } else if (typeof x === "string" && typeof y === "string") {
-                    return x === y ? 1 : 0;
-                } else {
-                    return "ERROR";
-                }
-            case "<>":
-                if (typeof x === "number" && typeof y === "number") {
-                    return x !== y ? 1 : 0;
-                } else if (typeof x === "string" && typeof y === "string") {
-                    return x !== y ? 1 : 0;
-                } else {
-                    return "ERROR";
-                }
-            case "&":
-                return typeof x === "number" && typeof y === "number" ? (x !== 0 && y !== 0 ? 1 : 0) : "ERROR";
-            case "|":
-                return typeof x === "number" && typeof y === "number" ? (x !== 0 || y !== 0 ? 1 : 0) : "ERROR";
-            case ":":
-                return isRef(x) && isRef(y) && compareRefs(x, y) <= 0 ? `${x}:${y}` : "ERROR";
+    // @author Adarsh Jayaram
+    const executeFunction = (name: string, args: any[]): any => {
+        // You can implement specific functions like SUM, AVERAGE, etc.
+        switch (name.toLowerCase()) {
+            case "sum":
+                return args.reduce((acc, val) => acc + parseFloat(val), 0);
+            case "average":
+                return args.reduce((acc, val) => acc + parseFloat(val), 0) / args.length;
             default:
-                return "ERROR";
+                return "ERROR: Function not implemented";
         }
     };
-    
- 
-    const handleFunctionArgs = (funcString: string): string[] => {
-        const argsString = funcString.slice(funcString.indexOf('(') + 1, -1);
-        return argsString.split(',').map(arg => arg.trim());
-    };
- 
+
     return (
         <>
             <div className="cell">
@@ -187,5 +126,5 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
         </>
     );
 };
- 
+
 export default Cell;

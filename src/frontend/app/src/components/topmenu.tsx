@@ -9,12 +9,13 @@ type TopMenuProps = {
   title: string;
 };
 
+// @author Adarsh Jayaram
+// Represents a grey bar at the top of the localhost:3000 page to hold all the buttons for modifying a spreadsheet
 const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
-
   const API_URL = "https://localhost:9443/api/v1/";
   const [showFileMenu, setShowFileMenu] = useState(false);
   const [selectedSheet, setSelectedSheet] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<string>("");
+  const [currentUser, setCurrentUser] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [publishers, setPublishers] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>("");
@@ -32,6 +33,16 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
   const [fileForm] = useState({
     filename: ""
   });
+
+  useEffect(() => {
+    const userString = localStorage.getItem('currentUser'); // This can be string or null
+    if (userString) {
+      const user = JSON.parse(userString); // Safely parse if not null
+      if (user && user.username) {
+        setCurrentUser(user.username);
+      }
+    }
+  }, []);
 
   // @author Brooklyn Schmidt
   // Fetches the publishers when the component mounts.
@@ -234,6 +245,11 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     <div className="top-menu">
       <div className="title-row">
         <div className="title">{title}</div>
+        {currentUser && (
+          <div className="user-info">
+            Logged in as: <strong>{currentUser}</strong>
+          </div>
+        )}
       </div>
       <div className="buttons-row">
         <div className="dropdown">

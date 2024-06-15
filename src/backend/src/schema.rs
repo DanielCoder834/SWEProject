@@ -1,5 +1,5 @@
 // @generated automatically by Diesel CLI.
-
+// Represents the enum for Ownership
 pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "ownership"))]

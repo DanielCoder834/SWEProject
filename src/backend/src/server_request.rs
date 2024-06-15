@@ -5,7 +5,7 @@ use base64::prelude::*;
 use uuid::Uuid;
 
 // Our files/structs
-use crate::database::{delete_sheet_by_sheet_name_and_user, get_password_of_username, insert_new_credentials, insert_sheet_relation_elem, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
+use crate::database::{delete_sheet_by_sheet_name_and_user, get_publisher_of_username, insert_new_credentials, insert_sheet_relation_elem, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
 use crate::results::*;
 // use crate::schema::sheet_elems::sheet_id;
 use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
@@ -122,7 +122,7 @@ async fn getPublishers() -> impl Responder {
 async fn createSheet(argument: web::Json<Argument>)
                      -> impl Responder {
     let publisher_name: &String = &argument.publisher;
-    let result_publisher_of_sheet = get_password_of_username(publisher_name);
+    let result_publisher_of_sheet = get_publisher_of_username(publisher_name);
     let publisher_of_sheet = if result_publisher_of_sheet.is_err() {
         return web::Json(result_publisher_of_sheet.err().unwrap());
     } else {
@@ -185,7 +185,7 @@ async fn createSheet(argument: web::Json<Argument>)
 async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
     let publisher_username = &argument.publisher;
 
-    let result_publisher_of_sheet = get_password_of_username(publisher_username);
+    let result_publisher_of_sheet = get_publisher_of_username(publisher_username);
     let publisher_of_sheet = if result_publisher_of_sheet.is_err() {
         return web::Json(result_publisher_of_sheet.err().unwrap());
     } else {
@@ -408,16 +408,25 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
 }
 
 // @author Daniel Kaplan
+// The most basic route.
+// Used for manual testing
 #[get("/api/v1/ping")]
 pub async fn ping() -> impl Responder {
-    println!("Pinged");
-    println!("Cert Exists: {}", Path::new("./cert.pem").exists());
-    println!("Key Exists: {}", Path::new("./key.pem").exists());
     HttpResponse::Ok().body("pong")
 }
 
-// @author Daniel Kaplan
-// Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
+/// @author Daniel Kaplan
+/// Decodes a payload like the one below to transform them into the new sheet element objects
+/// Valid Format for encoded_sheet: "$A0\nValue0\n$A1\nValue1\n"
+/// Invalid Format for encoded_sheet: "${10^999}\n$AValue1\n"
+/// # Arguments
+///
+/// * `encoded_sheet`: The encoded payload sent to the server
+/// * `sheet_id`: The id of the sheet the new elements belong to
+///
+/// returns: Result<Vec<NewSheetElem>, String>
+/// On Success: Returns the vector of decoded sheet elements
+/// On Error, returns a string describing the issue
 fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSheetElem>, String> {
     if !(*encoded_sheet).contains("$") {
         return Err("No $".to_string());
@@ -435,7 +444,16 @@ fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSh
     sheet_elem_vec
 }
 
-// @author Daniel Kaplan
+/// @author Daniel Kaplan
+/// Used to decode a single sheet element from a payload
+/// # Arguments
+///
+/// * `encoded_sheet_elem`: The payload of the single sheet element
+/// * `sheet_id`: The Uuid of the sheet that the update should belong to
+///
+/// returns: Result<NewSheetElem, String>
+/// On Success: Returns the decoded sheet element
+/// On Error, returns a string describing the issue
 fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
     let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
     let values_length = values.len();
@@ -474,6 +492,8 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
 }
 
 // @author Daniel Kaplan
+// Takes a vector of updates and concatenate the update_values of those updates to form a payload
+// Used primarily in the get update functions
 fn encoding_updates(updates: Vec<Updates>) -> String {
     updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

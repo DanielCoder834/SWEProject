@@ -4,6 +4,7 @@ use crate::schema::publishers;
 
 
 // @author Daniel Kaplan
+// Represents the individual elements of the publisher to be able to query from the database
 #[derive(PartialEq, Hash, Eq, Debug, serde::Deserialize,
 Clone, Queryable, Selectable, Identifiable)]
 #[diesel(table_name = crate::schema::publishers)]
@@ -15,27 +16,9 @@ pub struct Publisher {
     pub password: String,
 }
 
-// @author Daniel Kaplan
-impl Publisher {
-    // @author Daniel Kaplan
-    pub fn default() -> Self {
-        Publisher {
-            id: Uuid::new_v4(),
-            username: "".to_string(),
-            password: "".to_string(),
-        }
-    }
-    // @author Daniel Kaplan
-    pub fn new(username: String, password: String, id: Uuid) -> Self {
-        Publisher {
-            id,
-            username: username.clone(),
-            password,
-        }
-    }
-}
 
 // @author Daniel Kaplan
+// Represents the individual elements of the publisher to be able to insert into the database
 #[derive(Insertable)]
 #[diesel(table_name = publishers)]
 #[diesel(primary_key(id))]

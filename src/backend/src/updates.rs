@@ -3,6 +3,7 @@ use uuid::Uuid;
 use crate::schema::updates;
 
 // @author Daniel Kaplan
+// Represents the individual elements of the update payload to be able to query from the database
 #[derive(SqlType, PartialEq, Hash, Eq, Debug, serde::Deserialize,
 Clone, Queryable, Selectable, Identifiable)]
 #[diesel(table_name = crate::schema::updates)]
@@ -16,6 +17,7 @@ pub struct Updates {
 }
 
 // @author Daniel Kaplan
+// Represents the individual elements of the update payload to be able to insert into the database
 #[derive(Insertable, Debug, Clone)]
 #[diesel(table_name = updates)]
 #[diesel(primary_key(id))]
@@ -26,6 +28,7 @@ pub struct NewUpdates {
 }
 
 // @author Daniel Kaplan
+// Represents the different types of ownership to the update object
 #[derive(diesel_derive_enum::DbEnum, Clone, serde::Deserialize,
 Debug, Eq, Hash, PartialEq)]
 #[ExistingTypePath = "crate::schema::sql_types::Ownership"]

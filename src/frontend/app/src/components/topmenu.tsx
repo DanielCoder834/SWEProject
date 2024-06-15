@@ -34,6 +34,8 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     filename: ""
   });
 
+  // This useEffect hook manages the authentication state by checking the localStorage for a saved user.
+  // If a user is found in localStorage, their username is parsed and set to manage user session in the app.
   useEffect(() => {
     const userString = localStorage.getItem('currentUser'); // This can be string or null
     if (userString) {
@@ -44,6 +46,8 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     }
   }, []);
 
+  // This useEffect hook manages the authentication state by checking localStorage for saved password data.
+  // If password data is found, it is parsed and set to maintain user session and authentication state.
   useEffect(() => {
     const passString = localStorage.getItem('currentPassword'); // This can be string or null
     if (passString) {
@@ -236,7 +240,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         console.error("API Failed");
       }
     } 
-  
+  // @author Adarsh Jayaram
+  // Fetches the latest updates for a published sheet using the API. It sends the publisher, sheet name,
+  // and update ID to the backend.
   const fetchGetUpdatesForPublished = async (owner: string, sheetName: string, update_id: string) => {
     try {
       const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
@@ -263,6 +269,8 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
       }
     } 
 
+    // @author Adarsh Jayaram
+    // Fetches updates for a subscriber of a sheet using the API, similar to fetchGetUpdatesForPublished but for subscribers.
     const fetchGetUpdatesForSubscription = async (owner: string, sheetName: string, update_id: string) => {
       try {
         const basicAuth = 'Basic ' + btoa(currentUser + ':' + currentPass);
@@ -289,6 +297,7 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         }
       } 
 
+  // @author Adarsh Jayaram
   const handleFileClick = () => {
     setShowFileMenu(!showFileMenu);
     console.log("Menu is set");
@@ -333,22 +342,30 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
     fetchSheets();
   };
 
+  // @author Adarsh Jayaram
+  // Defines the validation schema for creating a new spreadsheet, requiring a title and specific minimum dimensions.
   const validationSchema = Yup.object().shape({
     title: Yup.string().required("Title is required!"),
     rows: Yup.number().min(1, "At least 1 row required").required("Rows are required"),
     columns: Yup.number().min(1, "At least 1 column required").required("Columns are required")
   });
 
+  // @author Adarsh Jayaram
+  // Defines the validation schema for operations that require a filename, ensuring the filename is provided.
   const fileValidationSchema = Yup.object().shape({
     filename: Yup.string().required("Filename is required!")
   });
 
+  // @author Adarsh Jayaram
+  // Handles the form submission for creating a new spreadsheet, triggering backend creation and updating UI state.
   const handleCreateSubmit = (values: { title: string; rows: number; columns: number }) => {
     onCreateSpreadsheet(values.rows, values.columns, values.title);
     fetchCreate(values.title);
     setShowCreateModal(false); // Close the modal after submission
   };
 
+  // @author Adarsh Jayaram
+  // Handles the form submission for file operations, logging the filename and managing modal visibility.
   const handleFileSubmit = (values: { filename: string }) => {
     console.log("File action with filename:", values.filename);
     setShowOpenModal(false);
@@ -373,6 +390,8 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
    }
 
   return (
+    /* @author Adarsh Jayaram
+        Displays a file button which drops down to a create, open, save, and delete button */
     <div className="top-menu">
       <div className="title-row">
         <div className="title">{title}</div>
@@ -411,7 +430,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         </div>
       </div>
 
-      {showSheetModal && (
+      { /* @author Adarsh Jayaram
+        Displays a modal for selecting a sheet from the selected user's list */
+      showSheetModal && (
         <div className="modal-backdrop">
         <div className="form-container">
           <h2>{selectedUser}'s sheets</h2>
@@ -441,7 +462,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
        </div>
      )}
 
-      {showCreateModal && (
+      { /* @author Adarsh Jayaram
+        Displays a modal to create a new spreadsheet, allowing user to specify title, rows, and columns */
+      showCreateModal && (
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik
@@ -475,7 +498,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         </div>
       )}
 
-      {showOpenModal && (
+      {/* @author Adarsh Jayaram
+      Displays a modal for opening a saved spreadsheet using a specified filename */
+      showOpenModal && (
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik
@@ -499,7 +524,9 @@ const TopMenu: React.FC<TopMenuProps> = ({ onCreateSpreadsheet, title }) => {
         </div>
       )}
 
-      {showSaveModal && (
+      {/* @author Adarsh Jayaram
+      Displays a modal for saving the current state of the spreadsheet with a specified filename */
+      showSaveModal && (
         <div className="modal-backdrop">
           <div className="form-container">
             <Formik

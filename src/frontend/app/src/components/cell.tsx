@@ -15,6 +15,7 @@ type CellProps = {
     };
 };
 
+// represents a cell that holds a value and can compute equations
 const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     const { gridData, setGridData } = data;
 
@@ -40,13 +41,13 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
             }
         }
     };
-
+    // Updates the cell's value in the grid data state.
     const updateCell = (val: string) => {
         const newData = [...gridData];
         newData[row][col] = val;
         setGridData(newData);
     };
-
+    // Evaluates a parsed AST node and returns the computation result.
     const evaluateOperation = (node: ASTNode, context?: any): any => {
         console.log("Evaluating node type:", node.type);  // Debug output
         if (!node) return "ERROR: Empty node";
@@ -89,7 +90,8 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
         }
     };
     
-    // @author Adarsh Jayaram 
+    // @author Adarsh Jayaram
+    // Evaluates the value of a cell reference within the grid.
     const evaluateCell = (reference: string, context: any): any => {
         if (!context || !context.getCell) {
             return "ERROR: Context or getCell method not provided";
@@ -102,6 +104,7 @@ const Cell: React.FC<CellProps> = ({ row, col, data }) => {
     };
     
     // @author Adarsh Jayaram
+    // Executes a function call based on the provided function name and arguments.
     const executeFunction = (name: string, args: any[]): any => {
         // You can implement specific functions like SUM, AVERAGE, etc.
         switch (name.toLowerCase()) {

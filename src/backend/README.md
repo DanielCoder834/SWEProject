@@ -27,3 +27,10 @@ Before running the server, make a Copy of the .env.example and fll it with the
 4. Running the Server with Docker 
    1. Install Docker - There is an application called Docker Desktop you can use
    2. Type 'make server-docker' into the terminal
+
+
+
+Other terminal commands (need to be in the backend directory): 
+1. For Diesel (ORM):
+     - Creating the database: diesel setup
+     - Making new tables: diesel migration generate create_<table_name>

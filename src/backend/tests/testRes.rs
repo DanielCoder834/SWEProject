@@ -20,9 +20,10 @@ mod tests {
     /* Positive Tests */
 
     /* Positive Route/Auth Tests */
+    // Tests the register route
     // @author Daniel Kaplan
     #[actix_web::test]
-    async fn test_request_get() {
+    async fn test_request_register() {
         let app = make_app(vec![register]).await;
         let resp: Result = get_route_result_with_auth(
             "/api/v1/register",
@@ -31,6 +32,8 @@ mod tests {
         assert!(resp.success);
     }
 
+    // Basic test example
+    // Tests the ping route
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_ping() {
@@ -40,11 +43,10 @@ mod tests {
         assert!(resp.status().is_success());
     }
 
+    // An in-depth test on the register function
     // @author Leo Zhao
     #[actix_web::test]
     async fn test_registration() {
-        // Establish a database connection
-
         // Create the application with the register endpoint
         let app = test::init_service(App::new().service(register)).await;
 
@@ -72,6 +74,7 @@ mod tests {
         assert_eq!(optional_to_string(body.message), "Registered Successfully");
     }
 
+    // Tests the basic authentication using getPublishers and Register
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_authentication_correctness() {
@@ -109,6 +112,7 @@ mod tests {
         assert!(resp.status().is_success())
     }
 
+    // Tests if the get_publishers works
     // @author Leo Zhao
     #[actix_web::test]
     async fn test_get_publishers() {
@@ -136,6 +140,7 @@ mod tests {
         assert!(!optional_to_vector(body.value).is_empty()); // Ensure the list of publishers is not empty
     }
 
+    // Tests that the create sheet route function is correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_create_sheet_correctness() {
@@ -157,6 +162,7 @@ mod tests {
         assert!(resp_create_sheet.success)
     }
 
+    // Tests that the get sheet route function is correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_get_sheet_correctness() {
@@ -181,6 +187,7 @@ mod tests {
         assert!(resp_get_sheets.success)
     }
 
+    // Tests that the delete sheet route function is correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_delete_sheet_correctness() {
@@ -205,6 +212,7 @@ mod tests {
         assert!(resp_delete_sheets.success)
     }
 
+    // Tests that the update subscriber route function is correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_update_subscription_correctness() {
@@ -229,6 +237,8 @@ mod tests {
         assert!(resp_update_subscription.success)
     }
 
+    // Tests that the update publisher route function is correct
+    // with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_update_publisher_correctness() {
@@ -253,6 +263,8 @@ mod tests {
         assert!(resp_update_publisher.success)
     }
 
+    // Tests that the get update from subscriber route function is
+    // correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_get_update_subscription_correctness() {
@@ -283,6 +295,8 @@ mod tests {
         assert!(resp_get_update_subscription.success)
     }
 
+    // Tests that the get update from publisher route function is
+    // correct with the necessary values
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_get_update_publishers_correctness() {
@@ -316,6 +330,8 @@ mod tests {
 
     /* Negative Tests */
     /* Negative Route Tests */
+    // Tests that the update from subscriber route function handles the issue
+    // When no payload is provided
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_update_subscription_no_payload_provided() {
@@ -343,6 +359,8 @@ mod tests {
     }
 
     // Daniel Kaplan Fixed Issues with the code
+    // Tests that the register function handles the issue
+    // When the username and password are not base64 decoded
     // @author Leo Zhao
     #[actix_web::test]
     async fn test_username_password_not_decoded_register() {
@@ -369,6 +387,8 @@ mod tests {
     }
 
     // @author Daniel Kaplan
+    // Tests that the register function handles the issue
+    // when the basic authentication fields are not the correct length
     #[actix_web::test]
     async fn test_auth_not_correct_length_register() {
         // Create the application with the register endpoint
@@ -381,7 +401,7 @@ mod tests {
             .to_request();
 
         let resp: Result = test::call_and_read_body_json(&app, req).await;
-        // println!("{:?}", body);
+
         // Check if registration failed due to missing username or password
         assert!(!resp.success);
         assert_eq!(resp.message.unwrap_or_else(|| "".to_string()), "Passed in more than one string for authentication\
@@ -389,6 +409,7 @@ mod tests {
         Basic username:password \nDenied Format: Basic username1:password1 username2:password2".to_string());
     }
 
+    // Tests when the username and password are not provided to the register route
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_username_password_not_provided_register() {
@@ -403,12 +424,13 @@ mod tests {
             .to_request();
 
         let resp: Result = test::call_and_read_body_json(&app, req).await;
-        // println!("{:?}", body);
         // Check if registration failed due to missing username or password
         assert!(!resp.success);
         assert_eq!(resp.message.unwrap_or_else(|| "".to_string()), "Username or password are not provided".to_string());
     }
 
+    // Tests when the sheet_row id is too big with the create sheet route
+    // (The sheet_row is a i32, which has a max of 2147483647)
     // @author Daniel Kaplan
     #[actix_web::test]
     async fn test_payload_row_number_too_large() {
@@ -459,6 +481,8 @@ mod tests {
     }
 
     // @author Daniel Kaplan
+    // Test when the id is invalid, in this case empty, when used in the
+    // getUpdatesForPublished function
     #[actix_web::test]
     async fn invalid_id_get_updates_publisher() {
         let app = test::init_service(App::new()
@@ -489,6 +513,8 @@ mod tests {
     }
 
     // @author Daniel Kaplan
+    // Test when the id is invalid, in this case empty, when used in the
+    // getUpdatesForSubscription function
     #[actix_web::test]
     async fn invalid_id_get_updates_subscriber() {
         let app = test::init_service(App::new()
@@ -532,8 +558,9 @@ mod tests {
     // ```
     // The Register Test
     // ```
-    // Don't worry about the logic with impl and T. They are a thing called traits,
-    // which are like required functions that needed to be implemented.
+    // Creates a mock based on the routes passed in.
+    // Limited usage as the [#<http verb>(<route>)] ties the function to a type
+    // limiting this functions usage
     async fn make_app<T: HttpServiceFactory + 'static>(routes: Vec<T>)
                                                        -> impl Service<Request, Response=ServiceResponse<BoxBody>, Error=actix_web::Error> {
         test::init_service(
@@ -541,7 +568,17 @@ mod tests {
                 .service(routes)).await
     }
 
-    // @author Daniel Kaplan
+    /// @author Daniel Kaplan
+    /// Calls the get endpoint of the provided api route using the authentication
+    /// From the basicAuth value and the mock app
+    /// # Arguments
+    ///
+    /// * `path`: The ending path of the api route (eg. /api/v1/foo)
+    /// * `app`: The mock app used to make the request
+    /// * `basicAuth`: The basic authentication to allow the user to make the request
+    ///
+    /// returns: Result
+    /// The result is response from calling that get endpoint
     #[allow(non_snake_case)]
     async fn get_route_result_with_auth<T: Service<Request, Response=ServiceResponse<BoxBody>,
         Error=actix_web::Error>>(
@@ -558,7 +595,17 @@ mod tests {
         resp
     }
 
-    // @author Daniel Kaplan
+    /// @author Daniel Kaplan
+    /// Calls the post endpoint of the provided api route using the authentication
+    /// From the basicAuth value and the mock app
+    /// # Arguments
+    ///
+    /// * `path`: The ending path of the api route (eg. /api/v1/foo)
+    /// * `app`: The mock app used to make the request
+    /// * `basicAuth`: The basic authentication to allow the user to make the request
+    ///
+    /// returns: Result
+    /// The result is response from calling that post endpoint
     #[allow(non_snake_case)]
     async fn post_route_result_with_auth<T: Service<Request, Response=ServiceResponse<BoxBody>,
         Error=actix_web::Error>>(

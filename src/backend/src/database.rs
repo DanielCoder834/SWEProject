@@ -23,11 +23,14 @@ type Result = results::Result;
 type RustResults<T, E> = std::result::Result<T, E>;
 
 // @author Daniel Kaplan
+// Meant to allow rust code to interact with the postgres database
+// The database is identified through the DATABASE_URL
+// One of the few functions that panics.
+// If it does, you need to set the DATABASE_URL in your .env correctly
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    println!("{:?}", database_url);
     let connect = PgConnection::establish(&database_url);
     match connect {
         Ok(v) => {
@@ -41,6 +44,8 @@ pub fn establish_connection() -> PgConnection {
 }
 
 // @author Daniel Kaplan
+// Inserts new publishers into the database
+// Used in register
 pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Publisher> {
     let new_credentials = NewPublisherCredentials {
         id: &Uuid::new_v4(),
@@ -54,6 +59,7 @@ pub fn insert_new_credentials(username: &str, password: &str) -> QueryResult<Pub
 }
 
 // @author Daniel Kaplan
+// Gets all the publishers through a basic select call, the error handling is done in the function that calls this
 pub fn get_all_publishers() -> QueryResult<Vec<Publisher>> {
     use crate::schema::publishers::dsl::{publishers};
     publishers
@@ -92,7 +98,7 @@ pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
                          -> RustResults<usize, Result> {
     // use crate::schema::sheet_elems::dsl::{sheet_column_identifier, sheet_row, sheet_id};
     use crate::schema::{updates};
-    let publisher_of_sheet = get_password_of_username(publisher_name);
+    let publisher_of_sheet = get_publisher_of_username(publisher_name);
     let publisher = if publisher_of_sheet.is_err() {
         return Err(publisher_of_sheet.err().unwrap());
     } else {
@@ -134,7 +140,16 @@ pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
 }
 
 
-// @author Daniel Kaplan
+/// @author Daniel Kaplan
+/// # Arguments
+///
+/// * `new_sheet_elem_vec`: The elements being updates
+/// * `sheet_ids_of_matching_publishers_and_sheets`: Ids of which sheets to update
+///
+/// returns: Result<(), Result>
+/// If it errs, it will that in the form of a result object.
+/// Nothing happens otherwise
+///
 fn update_multiple_sheet_elem(new_sheet_elem_vec: &Vec<NewSheetElem>,
                        sheet_ids_of_matching_publishers_and_sheets: &Vec<Uuid>
 ) -> RustResults<(), Result> {
@@ -144,7 +159,7 @@ fn update_multiple_sheet_elem(new_sheet_elem_vec: &Vec<NewSheetElem>,
         let new_sheet_row = &new_sheet_elem.sheet_row;
         let new_sheet_value = &new_sheet_elem.sheet_value;
         let sheet_element_to_update: QueryResult<SheetElem> = diesel::update(
-            crate::schema::sheet_elems::table
+            schema::sheet_elems::table
                 .filter(sheet_column_identifier.eq(new_sheet_col))
                 .filter(sheet_row.eq(new_sheet_row))
                 .filter(sheet_id.eq_any(sheet_ids_of_matching_publishers_and_sheets)))
@@ -185,7 +200,7 @@ pub fn find_updates_by_id_and_ownership(
     publisher_name: &String,
     sheet_name: &String) -> RustResults<Vec<Updates>, Result> {
     use crate::schema::updates::dsl::{updates, owner_id, id, ownership};
-    let publisher_of_sheet = get_password_of_username(publisher_name);
+    let publisher_of_sheet = get_publisher_of_username(publisher_name);
     let publisher = if publisher_of_sheet.is_err() {
         return Err(publisher_of_sheet.err().unwrap());
     } else {
@@ -212,7 +227,20 @@ pub fn find_updates_by_id_and_ownership(
     Ok(get_updates_based_on_ids_and_ownership.unwrap())
 }
 
-// @author Daniel Kaplan
+/// @author Daniel Kaplan
+///
+/// # Arguments
+///
+/// * `new_sheet`: The new sheet to be inserted
+/// * `new_sheet_elemt`: Initial elements to insert into the database
+/// * `publisher`: The publisher object being inserted
+///
+/// returns: Result<(), String>
+/// Returns the string of the error message and some more information if it errors
+/// Nothing gets return if it succeeds
+///
+/// This function is used to insert a publisher, sheet and connecting them to a many-to-many relationship
+/// Through the publisher_sheet table
 pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
                                   new_sheet_elemt: &Vec<NewSheetElem>,
                                   publisher: &Publisher) -> RustResults<(), String> {
@@ -262,7 +290,14 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
     Ok(())
 }
 
-// @author Daniel Kaplan
+/// @author Daniel Kaplan
+///
+/// # Arguments
+///
+/// * `publisher`: The publisher object to identify which sheets belongs to that user
+///
+/// returns: Vec<Test_Sheet>
+/// Returns the sheets belonging to a publisher
 pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
     use crate::schema::{sheets};
     PublisherSheet::belonging_to(publisher)
@@ -273,6 +308,7 @@ pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
 }
 
 // @author Daniel Kaplan
+// Used to fetch all the sheets owned by a user with a specific name of the sheet
 pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publisher)
                                          -> Vec<Test_Sheet> {
     PublisherSheet::belonging_to(publisher)
@@ -283,14 +319,25 @@ pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publi
         .expect("Oops")
 }
 
-// @author Daniel Kaplan
+/// @author Daniel Kaplan
+///
+/// # Arguments
+///
+/// * `publisher_name`: The name of the publisher who owns the sheet
+/// * `sheet_title`: The title of the sheet being deleted
+///
+/// returns: Result<(usize, usize, usize), Result>
+/// On success returns a tuple representing the number of the sheets deleted,
+/// the number of sheet to publisher relations deleted and the number of sheet elements deleted, respectively
+///
+/// Returns the error Result object if the function does not succeed
 pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title: &String) -> RustResults<(usize, usize, usize), Result> {
     // use crate::schema::{sheet_elems};
     use crate::schema::publisher_sheets::dsl::{publisher_sheets, sheets_id};
     use crate::schema::sheets::dsl::{sheets, id};
     use crate::schema::sheet_elems::dsl::{sheet_id, sheet_elems};
 
-    let publisher = get_password_of_username(publisher_name);
+    let publisher = get_publisher_of_username(publisher_name);
     let publisher_no_err = if publisher.is_err() {
         return Err(publisher.err().unwrap());
     } else {
@@ -335,7 +382,8 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
 }
 
 // @author Daniel Kaplan
-pub fn get_password_of_username(passed_username: &String) -> RustResults<Publisher, Result> {
+// Gets the Publisher with the matching username passed in.
+pub fn get_publisher_of_username(passed_username: &String) -> RustResults<Publisher, Result> {
     use crate::schema::publishers::dsl::{publishers, username};
     let res = publishers
         .filter(username.eq(passed_username))
@@ -350,6 +398,8 @@ pub fn get_password_of_username(passed_username: &String) -> RustResults<Publish
 }
 
 // @author Daniel Kaplan
+// gets the uuid of a sheet based on the name of the sheet passed in
+// Used primarily in the get update route functions
 pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uuid, Result> {
     use crate::schema::sheets::dsl::{sheets, title, id};
     let res = sheets
@@ -365,6 +415,7 @@ pub fn get_sheet_id_by_sheet_name(passed_sheet_name: &String) -> RustResults<Uui
 }
 
 // @author Daniel Kaplan
+// Checks if the username and password exists in the database
 pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> bool {
     use crate::schema::publishers::dsl::{password, publishers, username};
     let exists_credentials = select(exists(publishers

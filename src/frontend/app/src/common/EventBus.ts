@@ -1,3 +1,4 @@
+// referenced https://github.com/bezkoder/react-typescript-login-example to make this class
 const eventBus = {
     on(event: string, callback: EventListener) {
       document.addEventListener(event, (e) => callback(e));

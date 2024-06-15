@@ -1,3 +1,4 @@
+// referenced https://www.bezkoder.com/react-typescript-login-example/ to make this class
 import { Component } from "react";
 
 import UserService from "../services/user.service";

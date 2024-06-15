@@ -1,6 +1,5 @@
 import { ASTNode, NumberNode, BasicOperationNode, FunctionNode, ReferenceNode, StringNode } from "./astnodes";
 
-// @author Alivin Wong
 type TokenType = "REF" | "FORMULA" | "OPERATOR" | "FUNCTION" | "CHARACTERS" | "NUMBER";
 
 export interface Token {
@@ -8,30 +7,32 @@ export interface Token {
     value: string;
 }
 
-// @author Adarsh Jayaram
 export class Parser {
-
     private tokenStream: Token[];
     private currentPos: number;
 
+    // Constructor: Initializes the parser with a stream of tokens
     constructor(tokens: Token[]) {
         this.tokenStream = tokens;
         this.currentPos = 0;
     }
 
+    // Main parse function that processes tokens into an AST
     parse(): ASTNode {
-        let node = this.factor();
+        let node = this.factor(); // Start with a factor, could be a number, a parenthesis expression, etc.
 
+        // Process any multiplication/division operations next as they have higher precedence
         while (this.check("OPERATOR", "*", "/")) {
             const operator = this.getNextToken().value;
             const right = this.factor();
             node = new BasicOperationNode(operator, node, right);
         }
 
+        // Process addition and subtraction after higher precedence operations
         while (this.check("OPERATOR", "+", "-", "<", ">", "=", "<>", "&", "|", ":")) {
             const operator = this.getNextToken().value;
             let nextFactor = this.factor();
-            while (this.check("OPERATOR", "*", "/")) {
+            while (this.check("OPERATOR", "*", "/")) { // Inner loop for nested multiplication/division
                 const subOperator = this.getNextToken().value;
                 const subRight = this.factor();
                 nextFactor = new BasicOperationNode(subOperator, nextFactor, subRight);
@@ -42,14 +43,15 @@ export class Parser {
         return node;
     }
 
+    // Processes individual factors in expressions
     factor(): ASTNode {
-        if (this.check("NUMBER")) {
+        if (this.check("NUMBER")) { // If it's a number, create a NumberNode
             return new NumberNode(parseFloat(this.getNextToken().value));
         }
 
-        if (this.check("OPERATOR", "(")) {
+        if (this.check("OPERATOR", "(")) { // Handle expressions inside parentheses
             this.getNextToken(); // Consume '('
-            const expression = this.parse(); // Recursively parse the enclosed expression.
+            const expression = this.parse(); // Recursively parse the expression
             if (!this.check("OPERATOR", ")")) {
                 throw new Error("Expected ')' to close expression");
             }
@@ -57,13 +59,13 @@ export class Parser {
             return expression;
         }
 
-        if (this.check("FUNCTION")) {
+        if (this.check("FUNCTION")) { // Handle function calls
             const functionName = this.getNextToken().value;
             if (!this.check("OPERATOR", "(")) {
                 throw new Error("Expected '(' after function name");
             }
             this.getNextToken(); // Consume '('
-            const args = this.parseFunctionArguments(); // Parse function arguments.
+            const args = this.parseFunctionArguments(); // Parse function arguments
             if (!this.check("OPERATOR", ")")) {
                 throw new Error("Expected ')' after function arguments");
             }
@@ -71,17 +73,19 @@ export class Parser {
             return new FunctionNode(functionName, args);
         }
 
-        if (this.check("REF")) {
+        if (this.check("REF")) { // Handle references (like variables or cell references)
             return new ReferenceNode(this.getNextToken().value);
         }
 
-        if (this.check("CHARACTERS")) {
+        if (this.check("CHARACTERS")) { // Handle character strings
             return new StringNode(this.getNextToken().value);
         }
 
+        // Throw an error if an unexpected token is encountered
         throw new Error(`Unexpected token: ${this.tokenStream[this.currentPos]?.value || 'EOF'}`);
     }
 
+    // Helper function to parse arguments of a function
     parseFunctionArguments(): ASTNode[] {
         const args: ASTNode[] = [];
         while (!this.check("OPERATOR", ")")) {
@@ -95,16 +99,16 @@ export class Parser {
         return args;
     }    
 
+    // Checks if the current token matches the expected type and optional values
     check(type: TokenType, ...expectedValues: string[]): boolean {
         const token = this.tokenStream[this.currentPos];
-        // Return false immediately if token is undefined or type doesn't match
         if (!token || token.type !== type) {
             return false;
         }
-        // If expectedValues is empty, type match is sufficient, otherwise value must also match
         return expectedValues.length === 0 || expectedValues.includes(token.value);
     }
 
+    // Retrieves the next token in the stream, advancing the position
     getNextToken(): Token {
         if (this.currentPos >= this.tokenStream.length) {
             throw new Error("Attempted to access a token beyond the end of the stream.");

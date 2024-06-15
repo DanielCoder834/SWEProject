@@ -1,3 +1,4 @@
+// @author Adarsh Jayaram
 import React, { Component } from "react";
 import UserService from "../services/user.service";
 import Spreadsheet from "./spreadsheets";
@@ -13,7 +14,9 @@ type State = {
   content: string;
 };
 
+// Home component serves as the main page layout that includes top menu, spreadsheet, and potentially other components.
 export default class Home extends Component<Props, State> {
+  // Constructor: Initializes component state and binds methods.
   constructor(props: Props) {
     super(props);
 
@@ -22,24 +25,7 @@ export default class Home extends Component<Props, State> {
     };
   }
 
-  // componentDidMount() {
-  //   UserService.getPublicContent().then(
-  //     response => {
-  //       this.setState({
-  //         content: response.data
-  //       });
-  //     },
-  //     error => {
-  //       this.setState({
-  //         content:
-  //           (error.response && error.response.data) ||
-  //           error.message ||
-  //           error.toString()
-  //       });
-  //     }
-  //   );
-  // }
-
+  // Render method: Outputs the structured UI of the Home component, integrating TopMenu and Spreadsheet components.
   render() {
     const { dimensions, title, onCreateSpreadsheet } = this.props;
     return (
@@ -53,3 +39,4 @@ export default class Home extends Component<Props, State> {
     );
   }
 }
+

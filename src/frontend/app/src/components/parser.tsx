@@ -7,14 +7,16 @@ Types are defined as follows:
     4. FUNCTION - A spreadsheet function. Supports IF, SUM, MIN, MAX, AVG, CONCAT, and DEBUG.
     5. WHITESPACE - Any whitespace character used to separate terms.
 */
+
 type TokenType = "REF" | "FORMULA" | "OPERATOR" | "FUNCTION" | "WHITESPACE" | "NUMBER";
 
 export interface Token {
     type: TokenType;
     val: string;
 }
- 
+
 // Class that handles tokenization of input.
+
 export default class Parser {
     private input: string;
     private tokens: Token[] = [];

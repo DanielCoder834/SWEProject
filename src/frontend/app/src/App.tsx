@@ -1,3 +1,4 @@
+// @author Adarsh Jayaram plus inspirations from https://github.com/bezkoder/react-typescript-login-example
 import React, { Component } from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -26,20 +27,24 @@ type State = {
   title: string
 }
 
+// Main application component that manages routing and global state.
 class App extends Component<Props, State> {
+  // Constructor: Sets up the component state and binds methods.
   constructor(props: Props) {
     super(props);
     this.logOut = this.logOut.bind(this);
 
+    // Initial state includes user roles, current user, and default spreadsheet dimensions.
     this.state = {
       showModeratorBoard: false,
       showAdminBoard: false,
-      currentUser: null, // Initially there's no user
-      dimensions: { rows: 10, columns: 20 },  // Default dimensions
+      currentUser: null,
+      dimensions: { rows: 10, columns: 20 },
       title: "Untitled"
     };
   }
 
+  // componentDidMount: Fetches current user data and sets user permissions.
   componentDidMount() {
     const user = AuthService.getCurrentUser();
 
@@ -54,10 +59,12 @@ class App extends Component<Props, State> {
     EventBus.on("logout", this.logOut);
   }
 
+  // componentWillUnmount: Cleans up event listeners.
   componentWillUnmount() {
     EventBus.remove("logout", this.logOut);
   }
 
+  // logOut: Logs out the current user and updates the state accordingly.
   logOut() {
     AuthService.logout();
     this.setState({
@@ -67,6 +74,7 @@ class App extends Component<Props, State> {
     });
   }
 
+  // handleCreateSpreadsheet: Updates state based on the new spreadsheet dimensions and title.
   handleCreateSpreadsheet = (rows: number, columns: number, title: string) => {
     this.setState({
       dimensions: { rows, columns },
@@ -74,6 +82,7 @@ class App extends Component<Props, State> {
     });
   };
 
+  // render: Defines the layout and routing for the application.
   render() {
     const { currentUser, showModeratorBoard, showAdminBoard, dimensions, title } = this.state;
 

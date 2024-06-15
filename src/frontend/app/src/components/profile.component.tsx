@@ -1,3 +1,4 @@
+// referenced https://www.bezkoder.com/react-typescript-login-example/ to make this class
 import { Component } from "react";
 import { Navigate } from "react-router-dom";
 import AuthService from "../services/auth.service";

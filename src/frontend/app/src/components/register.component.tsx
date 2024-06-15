@@ -1,11 +1,10 @@
+// @author Adarsh Jayaram plus inspirations from https://www.bezkoder.com/react-typescript-login-example/
 import React, { Component } from "react";
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import AuthService from "../services/auth.service";
-import axios from "axios";
+import AuthService from "../services/auth.service"; // Importing the authentication service
 
-
-type Props = {};
+type Props = {}; // Empty Props type, no props expected for this component
 
 type State = {
   username: string;
@@ -19,6 +18,7 @@ export default class Register extends Component<Props, State> {
     super(props);
     this.handleRegister = this.handleRegister.bind(this);
 
+    // Initial state setup with empty credentials and flags for form status
     this.state = {
       username: "",
       password: "",
@@ -27,6 +27,7 @@ export default class Register extends Component<Props, State> {
     };
   }
 
+  // Validation schema using Yup to enforce input rules for username and password
   validationSchema() {
     return Yup.object().shape({
       username: Yup.string()
@@ -40,19 +41,24 @@ export default class Register extends Component<Props, State> {
     });
   }
 
+  // Handler for the registration process
   handleRegister(formValue: { username: string; password: string }) {
     const { username, password } = formValue;
   
+    // Resetting state before the API call
     this.setState({ message: "", successful: false });
   
+    // Call the AuthService to register the user
     AuthService.register(username, password).then(
       response => {
+        // Handle success by updating state to reflect successful registration
         this.setState({
           message: response.message,
           successful: true,
         });
       },
       error => {
+        // Handle errors by setting state with the error message received
         this.setState({
           successful: false,
           message: error.message || "Some error occurred."
@@ -60,7 +66,6 @@ export default class Register extends Component<Props, State> {
       }
     );
   }
-  
 
   render() {
     const { successful, message } = this.state;
@@ -72,12 +77,14 @@ export default class Register extends Component<Props, State> {
     return (
       <div className="col-md-12">
         <div className="card card-container">
+          {/* Formik used for form handling with initial values and validation */}
           <Formik
             initialValues={initialValues}
             validationSchema={this.validationSchema()}
             onSubmit={this.handleRegister}
           >
             <Form>
+              {/* Conditionally render form fields only if registration was not successful */}
               {!successful && (
                 <div>
                   <div className="form-group">
@@ -98,6 +105,7 @@ export default class Register extends Component<Props, State> {
                 </div>
               )}
 
+              {/* Message display area, showing success or error messages */}
               {message && (
                 <div className="form-group">
                   <div className={successful ? "alert alert-success" : "alert alert-danger"} role="alert">

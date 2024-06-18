@@ -1,5 +1,4 @@
 // Third Party Libraries
-use std::path::Path;
 use actix_web::{get, HttpResponse, Responder, HttpRequest, post, web};
 use base64::prelude::*;
 use uuid::Uuid;
@@ -455,7 +454,7 @@ fn decoded_sheet(encoded_sheet: &String, sheet_id: Uuid) -> RustResult<Vec<NewSh
 /// On Success: Returns the decoded sheet element
 /// On Error, returns a string describing the issue
 fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<NewSheetElem, String> {
-    let values = encoded_sheet_elem.trim().split("\n").collect::<Vec<&str>>();
+    let values = encoded_sheet_elem.trim().split(" ").collect::<Vec<&str>>();
     let values_length = values.len();
     if values_length != 2 {
         return Err(format!("Must have Position information and value information divided by a newline.\

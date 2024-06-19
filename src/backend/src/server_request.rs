@@ -137,7 +137,6 @@ async fn createSheet(argument: web::Json<Argument>)
 
     let payload = optional_to_string(argument.clone().payload);
 
-    dbg!(payload.clone());
     // Initial Sheet Element
     let initial_sheet_element: Vec<NewSheetElem> = if payload.len() != 0 {
         let result_decoding_sheet = decoded_sheet(&payload, sheet_id);
@@ -310,12 +309,13 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     }
 
     let sheet_updates_payload = encoding_updates(list_of_updates.unwrap());
-    let successful_argument: Argument = Argument::new(
-        publisher_name.to_string(),
-        sheet_name.to_string(),
-        optional_to_string(argument.clone().id),
-        sheet_updates_payload,
-    );
+    let successful_argument: Argument = Argument {
+        publisher: publisher_name.to_string(),
+        sheet: Some(sheet_name.to_string()),
+        id: argument.clone().id,
+        payload: Some(sheet_updates_payload),
+    };
+
 
     let successful_result: Result =
         Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
@@ -347,12 +347,12 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     }
 
     let sheet_updates_payload = encoding_updates(list_of_updates.unwrap());
-    let successful_argument: Argument = Argument::new(
-        publisher_name.to_string(),
-        sheet_name.to_string(),
-        optional_to_string(argument.clone().id), // needs to be last taken ID
-        sheet_updates_payload, // map everything to Argument
-    );
+    let successful_argument: Argument = Argument {
+        publisher: publisher_name.to_string(),
+        sheet: Some(sheet_name.to_string()),
+        id: argument.clone().id,
+        payload: Some(sheet_updates_payload),
+    };
 
     let successfull_result: Result =
         Result::new(true, "Successfully retrieved updates for publishers".to_string(), vec![successful_argument]);

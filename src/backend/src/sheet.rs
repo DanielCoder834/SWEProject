@@ -9,7 +9,7 @@ use uuid::Uuid;
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[diesel(primary_key(id))]
 #[allow(non_camel_case_types)]
-pub struct Test_Sheet {
+pub struct Sheets {
     pub(crate) id: Uuid, // Identifier
     pub title: String, // Name of the sheet
 }
@@ -20,7 +20,7 @@ pub struct Test_Sheet {
 #[diesel(table_name = crate::schema::sheets)]
 #[diesel(primary_key(id))]
 #[allow(non_camel_case_types)]
-pub struct New_Test_Sheet {
+pub struct NewSheets {
     pub(crate) id: Uuid, // Identifier
     pub(crate) title: String, // Name of the sheet
 }

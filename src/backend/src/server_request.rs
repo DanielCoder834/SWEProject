@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::database::{delete_sheet_by_sheet_name_and_user, get_publisher_of_username, insert_new_credentials, insert_sheet_relation_elem, get_sheets_by_a_publisher, get_all_publishers, update_sheet_elem, find_updates_by_id_and_ownership, get_sheet_id_by_sheet_name};
 use crate::results::*;
 // use crate::schema::sheet_elems::sheet_id;
-use crate::sheet::{New_Test_Sheet, NewSheetElem, Test_Sheet};
+use crate::sheet::{Sheets, NewSheetElem, NewSheets};
 use crate::updates::{Ownership, Updates};
 
 // Type Aliasing
@@ -130,7 +130,7 @@ async fn createSheet(argument: web::Json<Argument>)
 
     let sheet_title: &String = &optional_to_string(argument.clone().sheet);
     let sheet_id = Uuid::new_v4();
-    let new_sheet: New_Test_Sheet = New_Test_Sheet {
+    let new_sheet: NewSheets = NewSheets {
         title: sheet_title.clone(),
         id: sheet_id,
     };
@@ -189,7 +189,7 @@ async fn getSheets(argument: web::Json<Argument>) -> impl Responder {
     } else {
         result_publisher_of_sheet.unwrap()
     };
-    let sheets: Vec<Test_Sheet> = get_sheets_by_a_publisher(&publisher_of_sheet);
+    let sheets: Vec<Sheets> = get_sheets_by_a_publisher(&publisher_of_sheet);
 
     let list_of_arguments: Vec<Argument> = sheets.into_iter().map(|sheet| Argument::new(
         publisher_username.clone(), sheet.title, "".to_string(), "".to_string(),
@@ -302,7 +302,7 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
         return web::Json(Result::error("Could not Parse Id".to_string(), vec![argument.into_inner()]));
     };
     let list_of_updates = find_updates_by_id_and_ownership(sheet_id,
-                                                           Ownership::Publisher, publisher_name, sheet_name);
+                                                           Ownership::Subscriber, publisher_name, sheet_name);
 
     if list_of_updates.is_err() {
         return web::Json(Result::error("Failed to send updates".to_string(), vec![]));

@@ -15,8 +15,9 @@ use crate::publisher::Publisher;
 use crate::results::optional_to_string;
 use crate::schema::{publisher_sheets, sheets};
 use crate::schema::sheets::title;
-use crate::sheet::{New_Test_Sheet, NewSheetElem, SheetElem, Test_Sheet};
+use crate::sheet::{NewSheets, NewSheetElem, SheetElem, Sheets};
 use crate::updates::{NewUpdates, Ownership, Updates};
+// use crate::updates::Ownership::Publisher;
 
 // Type Aliasing
 type Result = results::Result;
@@ -34,7 +35,6 @@ pub fn establish_connection() -> PgConnection {
     let connect = PgConnection::establish(&database_url);
     match connect {
         Ok(v) => {
-            println!("Connected");
             v
         }
         Err(_) => {
@@ -197,6 +197,7 @@ pub fn find_updates_by_id_and_ownership(
     publisher_name: &String,
     sheet_name: &String) -> RustResults<Vec<Updates>, Result> {
     use crate::schema::updates::dsl::{id, owner_id, ownership, updates};
+    use crate::schema::publishers::dsl::id as publisher_id;
     let publisher_of_sheet = get_publisher_of_username(publisher_name);
     let publisher = if publisher_of_sheet.is_err() {
         return Err(publisher_of_sheet.err().unwrap());
@@ -206,21 +207,30 @@ pub fn find_updates_by_id_and_ownership(
     let matching_sheet_name_owned_by_publisher =
         matching_publisher_and_sheet_name(sheet_name, &publisher);
 
-    let sheet_ids_of_matching_publishers_and_sheets =
-        matching_sheet_name_owned_by_publisher.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
+    let publisher_ids_of_sheet_updates =
+        matching_sheet_name_owned_by_publisher.iter().map(|sheet| {
+            PublisherSheet::belonging_to(sheet)
+                .inner_join(schema::publishers::table)
+                .select(publisher_id)
+                .load(&mut establish_connection())
+                .unwrap()
+        }).flatten().collect::<Vec<Uuid>>();
 
     let get_updates_based_on_ids_and_ownership = updates
-        .filter(owner_id.eq_any(sheet_ids_of_matching_publishers_and_sheets))
+        .filter(owner_id.eq_any(publisher_ids_of_sheet_updates))
         .filter(id.ge(update_id))
         .filter(ownership.eq(ownership_passed_in))
         .select(Updates::as_returning())
         .get_results::<Updates>(&mut establish_connection());
+
+
 
     if get_updates_based_on_ids_and_ownership.is_err() {
         let err_msg = get_updates_based_on_ids_and_ownership.err().unwrap().to_string();
         return Err(Result::error(format!("Issue with getting updates. Error: {err_msg}"),
         vec![]))
     }
+
     Ok(get_updates_based_on_ids_and_ownership.unwrap())
 }
 
@@ -238,7 +248,7 @@ pub fn find_updates_by_id_and_ownership(
 ///
 /// This function is used to insert a publisher, sheet and connecting them to a many-to-many relationship
 /// Through the publisher_sheet table
-pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
+pub fn insert_sheet_relation_elem(new_sheet: &NewSheets,
                                   new_sheet_elemt: &Vec<NewSheetElem>,
                                   publisher: &Publisher) -> RustResults<(), String> {
     use crate::schema::{publisher_sheets, sheet_elems, sheets};
@@ -247,7 +257,7 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
     let insert_sheet_result =
         diesel::insert_into(sheets::table)
             .values(new_sheet)
-            .returning(Test_Sheet::as_returning())
+            .returning(Sheets::as_returning())
             .get_result(&mut establish_connection());
 
     if insert_sheet_result.is_err() {
@@ -295,11 +305,11 @@ pub fn insert_sheet_relation_elem(new_sheet: &New_Test_Sheet,
 ///
 /// returns: Vec<Test_Sheet>
 /// Returns the sheets belonging to a publisher
-pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
+pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Sheets> {
     use crate::schema::sheets;
     PublisherSheet::belonging_to(publisher)
         .inner_join(sheets::table)
-        .select(Test_Sheet::as_select())
+        .select(Sheets::as_select())
         .load(&mut establish_connection())
         .expect("Oops")
 }
@@ -307,11 +317,11 @@ pub fn get_sheets_by_a_publisher(publisher: &Publisher) -> Vec<Test_Sheet> {
 // @author Daniel Kaplan
 // Used to fetch all the sheets owned by a user with a specific name of the sheet
 pub fn matching_publisher_and_sheet_name(sheet_title: &String, publisher: &Publisher)
-                                         -> Vec<Test_Sheet> {
+                                         -> Vec<Sheets> {
     PublisherSheet::belonging_to(publisher)
         .inner_join(sheets::table)
         .filter(title.eq(sheet_title))
-        .select(Test_Sheet::as_select())
+        .select(Sheets::as_select())
         .load(&mut establish_connection())
         .expect("Oops")
 }
@@ -341,7 +351,7 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         publisher.unwrap()
     };
 
-    let sheets_to_delete: Vec<Test_Sheet> = matching_publisher_and_sheet_name(sheet_title, &publisher_no_err);
+    let sheets_to_delete: Vec<Sheets> = matching_publisher_and_sheet_name(sheet_title, &publisher_no_err);
 
     let sheet_ids_to_delete: &Vec<Uuid> =
         &sheets_to_delete.iter().map(|sheet| sheet.id).collect::<Vec<Uuid>>();
@@ -425,6 +435,7 @@ pub fn password_and_username_in_db(auth_username: &str, auth_password: &str) -> 
 // @author Daniel Kaplan
 #[derive(Identifiable, Selectable, Queryable, Associations, Debug)]
 #[diesel(belongs_to(Publisher))]
+#[diesel(belongs_to(Sheets))]
 #[diesel(table_name = publisher_sheets)]
 #[diesel(primary_key(sheets_id, publisher_id))]
 struct PublisherSheet {

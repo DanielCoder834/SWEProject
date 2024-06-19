@@ -135,9 +135,9 @@ async fn createSheet(argument: web::Json<Argument>)
         id: sheet_id,
     };
 
-    let payload = optional_to_string(argument.clone().payload);
+    let payload = argument.clone().payload;
 
-    dbg!(payload.clone());
+    // dbg!(payload.clone());
     // Initial Sheet Element
     let initial_sheet_element: Vec<NewSheetElem> = if payload.len() != 0 {
         let result_decoding_sheet = decoded_sheet(&payload, sheet_id);
@@ -255,7 +255,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     } else {
         return web::Json(result_sheet_id.err().unwrap());
     };
-    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
+    let new_sheet_elem = decoded_sheet(&argument.clone().payload, sheet_id);
     if new_sheet_elem.is_err() {
         return web::Json(Result::error(
             "Failed to update sheet".to_string(),
@@ -269,7 +269,7 @@ async fn updatePublished(argument: web::Json<Argument>) -> impl Responder {
     };
     let num_of_rows_updated = update_sheet_elem(
         &unwrapped_new_sheet_elem, publisher_name, sheet_name,
-        argument.clone().payload, Ownership::Publisher);
+        Some(argument.clone().payload), Ownership::Publisher);
 
     if num_of_rows_updated.is_err() {
         return web::Json(num_of_rows_updated.err().unwrap());
@@ -310,15 +310,18 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     }
 
     let sheet_updates_payload = encoding_updates(list_of_updates.unwrap());
+    let non_null_payload = if sheet_updates_payload.is_empty() { "".to_string() } else { sheet_updates_payload };
+    println!("{}", non_null_payload);
     let successful_argument: Argument = Argument::new(
         publisher_name.to_string(),
         sheet_name.to_string(),
         optional_to_string(argument.clone().id),
-        sheet_updates_payload,
+        non_null_payload,
     );
 
     let successful_result: Result =
-        Result::new(true, "Successfully retrieved updates for subscription".to_string(), vec![successful_argument]);
+        Result::new(true, "Successfully retrieved updates for subscription".to_string(),
+                    vec![successful_argument]);
 
     web::Json(successful_result)
 }
@@ -379,7 +382,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
         return web::Json(sheet_id_result.err().unwrap());
     };
 
-    let new_sheet_elem = decoded_sheet(&optional_to_string(argument.clone().payload), sheet_id);
+    let new_sheet_elem = decoded_sheet(&argument.clone().payload, sheet_id);
     if new_sheet_elem.is_err() {
         let err_msg = new_sheet_elem.err().unwrap();
         return web::Json(Result::new(
@@ -391,7 +394,7 @@ async fn updateSubscription(argument: web::Json<Argument>) -> impl Responder {
 
     let unwrapped_new_sheet_elem: Vec<NewSheetElem> = new_sheet_elem.unwrap();
 
-    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, argument.clone().payload, Ownership::Subscriber);
+    let num_of_rows_updated = update_sheet_elem(&unwrapped_new_sheet_elem, publisher_name, sheet_name, Some(argument.clone().payload), Ownership::Subscriber);
 
     if num_of_rows_updated.is_err() {
         return web::Json(num_of_rows_updated.err().unwrap());
@@ -494,5 +497,6 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
 // Takes a vector of updates and concatenate the update_values of those updates to form a payload
 // Used primarily in the get update functions
 fn encoding_updates(updates: Vec<Updates>) -> String {
+    // println!("{:?}", updates);
     updates.into_iter().map(|update| update.update_value).collect::<String>()
 }

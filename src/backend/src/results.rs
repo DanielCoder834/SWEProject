@@ -37,7 +37,7 @@ pub struct Argument {
     pub publisher: String,
     pub sheet: Option<String>,
     pub id: Option<String>,
-    pub payload: String,
+    pub payload: Option<String>,
 }
 
 impl Argument {
@@ -48,7 +48,7 @@ impl Argument {
             publisher,
             sheet: string_to_optional(sheet),
             id: string_to_optional(id),
-            payload,
+            payload: string_to_optional(payload),
         }
     }
 }

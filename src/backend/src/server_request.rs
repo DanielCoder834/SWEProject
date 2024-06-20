@@ -494,5 +494,9 @@ fn decode_sheet_elem(encoded_sheet_elem: &String, sheet_id: Uuid) -> RustResult<
 // Takes a vector of updates and concatenate the update_values of those updates to form a payload
 // Used primarily in the get update functions
 fn encoding_updates(updates: Vec<Updates>) -> String {
-    updates.into_iter().map(|update| update.update_value).collect::<String>()
+    updates.into_iter().map(|mut update| {
+        let mut new = update.update_value;
+        new.push('\n');
+        return new;
+    }).collect::<String>()
 }

@@ -377,14 +377,6 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         return Err(Result::error(err_msg, vec![]));
     }
 
-    let delete_sheet_result =
-        diesel::delete(sheets.filter(id.eq_any(sheet_ids_to_delete)))
-            .execute(&mut establish_connection());
-    if delete_sheet_result.is_err() {
-        let err_msg = delete_sheet_result.err().unwrap().to_string();
-        return Err(Result::error(err_msg, vec![]))
-    }
-
     let delete_update_result =
         diesel::delete(updates.filter(update_sheet_id.eq_any(sheet_ids_to_delete)))
             .execute(&mut establish_connection());
@@ -392,6 +384,14 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
     if delete_update_result.is_err() {
         let err_msg = delete_update_result.err().unwrap().to_string();
         return Err(Result::error(err_msg, vec![]));
+    }
+
+    let delete_sheet_result =
+        diesel::delete(sheets.filter(id.eq_any(sheet_ids_to_delete)))
+            .execute(&mut establish_connection());
+    if delete_sheet_result.is_err() {
+        let err_msg = delete_sheet_result.err().unwrap().to_string();
+        return Err(Result::error(err_msg, vec![]))
     }
 
     let final_tuple = (delete_sheet_result.unwrap(), delete_sheet_relation_result, delete_sheet_elem_result.unwrap());

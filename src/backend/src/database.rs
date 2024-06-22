@@ -394,7 +394,11 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
         return Err(Result::error(err_msg, vec![]));
     }
 
-    Ok((delete_sheet_result.unwrap(), delete_sheet_relation_result, delete_sheet_elem_result.unwrap()))
+    let final_tuple = (delete_sheet_result.unwrap(), delete_sheet_relation_result, delete_sheet_elem_result.unwrap());
+    if final_tuple.eq(&(0, 0, 0)) {
+        return Err(Result::error("Deleted Nothing".to_string(), vec![]))
+    }
+    Ok(final_tuple)
 }
 
 // @author Daniel Kaplan

@@ -301,6 +301,10 @@ async fn getUpdatesForSubscription(argument: web::Json<Argument>) -> impl Respon
     } else {
         return web::Json(Result::error("Could not Parse Id".to_string(), vec![argument.into_inner()]));
     };
+
+    if sheet_id < 0 {
+        return web::Json(Result::error("Negative Id".to_string(), vec![argument.into_inner()]));
+    }
     let list_of_updates = find_updates_by_id_and_ownership(sheet_id,
                                                            Ownership::Subscriber, publisher_name, sheet_name);
 
@@ -339,6 +343,10 @@ async fn getUpdatesForPublished(argument: web::Json<Argument>) -> impl Responder
     } else {
         return web::Json(Result::error("Could not Parse Id".to_string(), vec![argument.into_inner()]));
     };
+    if sheet_id < 0 {
+        return web::Json(Result::error("Negative Id".to_string(), vec![argument.into_inner()]));
+    }
+
     let list_of_updates = find_updates_by_id_and_ownership(sheet_id,
                                                            Ownership::Publisher, publisher_name, sheet_name);
 

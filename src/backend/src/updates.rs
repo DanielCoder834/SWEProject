@@ -12,6 +12,7 @@ Clone, Queryable, Selectable, Identifiable)]
 pub struct Updates {
     id: i32,
     owner_id: Uuid,
+    sheet_id: Uuid,
     ownership: Ownership,
     pub update_value: String,
 }
@@ -23,6 +24,7 @@ pub struct Updates {
 #[diesel(primary_key(id))]
 pub struct NewUpdates {
     pub owner_id: Uuid,
+    pub(crate) sheet_id: Uuid,
     pub ownership: Ownership,
     pub update_value: String,
 }

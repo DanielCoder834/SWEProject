@@ -51,6 +51,7 @@ diesel::table! {
     updates (id) {
         id -> Int4,
         owner_id -> Uuid,
+        sheet_id -> Uuid,
         #[max_length = 1000]
         update_value -> Varchar,
         ownership -> Ownership,

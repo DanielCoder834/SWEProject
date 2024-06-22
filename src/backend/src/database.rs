@@ -119,6 +119,7 @@ pub fn update_sheet_elem(new_sheet_elem: &Vec<NewSheetElem>,
     let sheet_effected_count = new_sheet_elem.len();
 
     let new_update = NewUpdates {
+        sheet_id: *sheet_ids_of_matching_publishers_and_sheets.first().unwrap(),
         owner_id: publisher.id,
         ownership,
         update_value: optional_to_string(payload),
@@ -341,6 +342,7 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
     use crate::schema::publisher_sheets::dsl::{publisher_sheets, sheets_id};
     use crate::schema::sheets::dsl::{id, sheets};
     use crate::schema::sheet_elems::dsl::{sheet_elems, sheet_id};
+    use crate::schema::updates::dsl::{updates, sheet_id as update_sheet_id};
 
     let publisher = get_publisher_of_username(publisher_name);
     let publisher_no_err = if publisher.is_err() {
@@ -380,10 +382,19 @@ pub fn delete_sheet_by_sheet_name_and_user(publisher_name: &String, sheet_title:
             .execute(&mut establish_connection());
     if delete_sheet_result.is_err() {
         let err_msg = delete_sheet_result.err().unwrap().to_string();
-        Err(Result::error(err_msg, vec![]))
-    } else {
-        Ok((delete_sheet_result.unwrap(), delete_sheet_relation_result, delete_sheet_elem_result.unwrap()))
+        return Err(Result::error(err_msg, vec![]))
     }
+
+    let delete_update_result =
+        diesel::delete(updates.filter(update_sheet_id.eq_any(sheet_ids_to_delete)))
+            .execute(&mut establish_connection());
+
+    if delete_update_result.is_err() {
+        let err_msg = delete_update_result.err().unwrap().to_string();
+        return Err(Result::error(err_msg, vec![]));
+    }
+
+    Ok((delete_sheet_result.unwrap(), delete_sheet_relation_result, delete_sheet_elem_result.unwrap()))
 }
 
 // @author Daniel Kaplan
